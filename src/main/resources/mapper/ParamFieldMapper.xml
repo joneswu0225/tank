@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jones.tank.repository.ParamFieldMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.jones.tank.entity.ParamField">
+        <id column="id" property="id" />
+        <result column="name" property="name" />
+        <result column="detail" property="detail" />
+        <result column="param_id" property="paramId" />
+        <result column="attribute_id" property="attributeId" />
+        <result column="required" property="required" />
+        <result column="default_value" property="defaultValue" />
+        <result column="content_type" property="contentType" />
+        <result column="validate_type" property="validateType" />
+        <result column="operation_type" property="operationType" />
+        <result column="length_min" property="lengthMin" />
+        <result column="lenth_max" property="lenthMax" />
+        <result column="seq" property="seq" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id, name, detail, param_id, attribute_id, required, default_value, content_type, validate_type, length_min, lenth_max, seq
+    </sql>
+
+</mapper>

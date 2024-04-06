@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jones.tank.repository.ParamMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="ParamMap" type="com.jones.tank.entity.Param">
+        <id column="id" property="id"/>
+        <result column="name" property="name" />
+        <result column="detail" property="detail" />
+        <result column="type" property="type" />
+        <collection property="fields" ofType="ParamField" column="fid" javaType="com.jones.tank.entity.ParamField">
+            <id column="fid" property="id" />
+            <result column="fname" property="name" />
+            <result column="fdetail" property="detail" />
+            <result column="fparam_id" property="paramId" />
+            <result column="fattribute_id" property="attributeId" />
+            <result column="frequired" property="required" />
+            <result column="fdefault_value" property="defaultValue" />
+            <result column="fcontent_type" property="contentType" />
+            <result column="fvalidate_type" property="validateType" />
+            <result column="foperation_type" property="operationType" />
+            <result column="flength_min" property="lengthMin" />
+            <result column="flenth_max" property="lenthMax" />
+            <result column="fseq" property="seq" />
+        </collection>
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id, name, detail, type
+    </sql>
+
+    <insert id="insertRecord">
+        insert into message(name, detail, type)
+        values(#{name},#{detail},#{type})
+    </insert>
+    <update id="update" parameterType="com.jones.tank.object.BaseObject" >
+        update block
+        set id =#{id}
+        <if test="name != null and name != ''">
+            ,name = #{name}
+        </if>
+        <if test="type != null and type != ''">
+            ,type = #{type}
+        </if>
+        <if test="detail != null and detail != ''">
+            ,detail = #{detail}
+        </if>
+        where id=#{id}
+    </update>
+    <select id="findList" resultType="Param" parameterType="Query">
+        <include refid="com.jones.tank.repository.CustomBaseMapper.startPage" />
+        select * from param where deleted=0
+        <if test="name != null and name !=''">
+            and name = #{name}
+        </if>
+        <if test="type != null and type !=''">
+            and type = #{type}
+        </if>
+        order by id desc
+        <include refid="com.jones.tank.repository.CustomBaseMapper.endPage" />
+    </select>
+    <select id="findCount" resultType="java.lang.Long" parameterType="Query">
+        select count(*) from message where deleted=0
+        <if test="name != null and name !=''">
+            and name = #{name}
+        </if>
+        <if test="type != null and type !=''">
+            and type = #{type}
+        </if>
+    </select>
+    <select id="findAll" resultMap="ParamMap" parameterType="Query">
+        select a.id,a.name,a.detail,a.type
+               ,b.id fid, b.name fname, b.detail fdetail, b.param_id fparam_id, b.attribute_id fattribute_id
+               ,b.required frequired, b.default_value fdefault_value, b.content_type fcontent_type, b.validate_type fvalidate_type
+               ,b.operation_type foperation_type, b.length_min flength_min, b.length_max flength_max, b.seq fseq
+        from param a left join param_field b on a.id=b.param_id
+    </select>
+
+    <update id="delete">
+        update param set deleted=1 where id=#{id}
+    </update>
+
+</mapper>

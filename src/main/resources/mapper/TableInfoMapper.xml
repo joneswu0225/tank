@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jones.tank.repository.TableInfoMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.jones.tank.entity.TableInfo">
+        <id column="id" property="id" />
+        <result column="name" property="name" />
+        <result column="detail" property="detail" />
+        <result column="entity_type" property="entityType" />
+        <result column="table_type" property="tableType" />
+        <result column="key1" property="key1" />
+        <result column="key2" property="key2" />
+        <result column="key3" property="key3" />
+        <result column="rel1" property="rel1" />
+        <result column="rel2" property="rel2" />
+        <result column="rel3" property="rel3" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id, name, detail, entity_type, table_type, key1, key2, key3, rel1, rel2, rel3
+    </sql>
+
+    <insert id="insertRecord">
+        insert into table_info(name, detail, entity_type, table_type, key1, key2, key3, rel1, rel2, rel3)
+        values(#{name},#{detail},#{entityType},#{tableType},#{key1},#{key2},#{key3},#{rel1},#{rel2},#{rel3})
+    </insert>
+    <update id="update" parameterType="com.jones.tank.object.BaseObject" >
+        update table_info
+        set id =#{id}
+        <if test="name != null and name !=''">
+            and name = #{name}
+        </if>
+        <if test="detail != null and detail !=''">
+            and detail = #{detail}
+        </if>
+        <if test="entityType != null and entityType !=''">
+            and entity_type = #{entityType}
+        </if>
+        <if test="tableType != null and tableType !=''">
+            and table_type = #{tableType}
+        </if>
+        <if test="key1 != null and key1 !=''">
+            and key1 = #{key1}
+        </if>
+        <if test="key2 != null and key2 !=''">
+            and key2 = #{key2}
+        </if>
+        <if test="key3 != null and key3 !=''">
+            and key3 = #{key3}
+        </if>
+        <if test="rel1 != null and rel1 !=''">
+            and rel1 = #{rel1}
+        </if>
+        <if test="rel2 != null and rel2 !=''">
+            and rel2 = #{rel2}
+        </if>
+        <if test="rel3 != null and rel3 !=''">
+            and rel3 = #{rel3}
+        </if>
+        where id=#{id}
+    </update>
+    <select id="findList" resultType="TableInfo" parameterType="Query">
+        <include refid="com.jones.tank.repository.CustomBaseMapper.startPage" />
+        select * from table_info where deleted=0
+        <if test="name != null and name !=''">
+            and name = #{name}
+        </if>
+        <if test="entityType != null and entityType !=''">
+            and entity_type = #{entityType}
+        </if>
+        <if test="tableType != null and tableType !=''">
+            and table_type = #{tableType}
+        </if>
+        order by id desc
+        <include refid="com.jones.tank.repository.CustomBaseMapper.endPage" />
+    </select>
+    <select id="findCount" resultType="java.lang.Long" parameterType="Query">
+        select count(*) from table_info where deleted=0
+        <if test="name != null and name !=''">
+            and name = #{name}
+        </if>
+        <if test="entityType != null and entityType !=''">
+            and entity_type = #{entityType}
+        </if>
+        <if test="tableType != null and tableType !=''">
+            and table_type = #{tableType}
+        </if>
+    </select>
+    <select id="findAll" resultType="TableInfo" parameterType="Query">
+        select * from table_info where deleted=0
+        <if test="name != null and name !=''">
+            and name = #{name}
+        </if>
+        <if test="entityType != null and entityType !=''">
+            and entity_type = #{entityType}
+        </if>
+        <if test="tableType != null and tableType !=''">
+            and table_type = #{tableType}
+        </if>
+    </select>
+    <update id="delete">
+        update interface set deleted=1 where id=#{id}
+    </update>
+
+
+</mapper>

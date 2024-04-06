@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jones.tank.repository.AttributeInfoMapper">
+    <!-- 通用查询映射结果 -->
+    <resultMap id="AttributeInfoMap" type="com.jones.tank.entity.AttributeInfo">
+        <id column="id" property="id" />
+        <result column="name" property="name" />
+        <result column="entity_type" property="entityType" />
+        <result column="detail" property="detail" />
+        <result column="table_id" property="tableId" />
+        <result column="table_name" property="tableName" />
+        <result column="content_type" property="contentType" />
+        <result column="tag_flg" property="tagFlg" />
+        <association property="tableInfo" column="table_id" javaType="com.jones.tank.entity.TableInfo">
+            <id column="table_id" property="id" />
+            <result column="table_name" property="name" />
+            <result column="table_type" property="tableType" />
+            <result column="key1" property="key1" />
+            <result column="key2" property="key2" />
+            <result column="key3" property="key3" />
+        </association>
+    </resultMap>
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id, name, entity_type, detail, table_id, table_name, content_type, tag_flg
+    </sql>
+
+    <insert id="insertRecord">
+        insert into attribute_info(name, detail, entity_id, type, request_method, param_id, result_id)
+        values(#{name},#{detail},#{entityId},#{type},#{requestMethod},#{paramId},#{resultId})
+    </insert>
+    <update id="update" parameterType="com.jones.tank.object.BaseObject" >
+        update attribute_info
+        set id =#{id}
+        <if test="name != null and name !=''">
+            , name = #{name}
+        </if>
+        <if test="type != null and type !=''">
+            , type = #{type}
+        </if>
+        <if test="requestMethod != null">
+            , request_method = #{requestMethod}
+        </if>
+        <if test="entityId != null">
+            , entity_id = #{entityId}
+        </if>
+        <if test="paramId != null">
+            , param_id = #{paramId}
+        </if>
+        <if test="resultId != null">
+            , result_id = #{resultId}
+        </if>
+        where id=#{id}
+    </update>
+    <select id="findList" resultType="AttributeInfo" parameterType="Query">
+        <include refid="com.jones.tank.repository.CustomBaseMapper.startPage" />
+        select * from attribute_info where deleted=0
+        <if test="name != null and name !=''">
+            and name = #{name}
+        </if>
+        <if test="type != null and type !=''">
+            and type = #{type}
+        </if>
+        <if test="requestMethod != null">
+            and request_method = #{requestMethod}
+        </if>
+        <if test="entityId != null">
+            and entity_id = #{entityId}
+        </if>
+        <if test="paramId != null">
+            and param_id = #{paramId}
+        </if>
+        <if test="resultId != null">
+            and result_id = #{resultId}
+        </if>
+        order by id desc
+        <include refid="com.jones.tank.repository.CustomBaseMapper.endPage" />
+    </select>
+    <select id="findCount" resultType="java.lang.Long" parameterType="Query">
+        select count(*) from attribute_info where 1=1
+        <if test="name != null and name !=''">
+            and name = #{name}
+        </if>
+        <if test="entityType != null and entityType !=''">
+            and entity_type = #{entityType}
+        </if>
+        <if test="contentType != null and contentType !=''">
+            and content_type = #{contentType}
+        </if>
+        <if test="tableId != null">
+            and table_id = #{tableId}
+        </if>
+    </select>
+    <select id="findAll" resultMap="AttributeInfoMap" parameterType="Query">
+        select a.id, a.name, a.detail, a.table_id, b.name as table_name, b.table_type, b.key1, b.key2, b.key3
+        from attribute_info a left join table_info b on a.table_id=b.id
+        where a.deleted=0
+    </select>
+    <update id="delete">
+        update attribute_info set deleted=1 where id=#{id}
+    </update>
+    
+</mapper>
