@@ -5,7 +5,7 @@ import com.jones.tank.entity.query.Query;
 
 import java.util.List;
 
-public interface CustomBaseMapper<T> {
+public interface CommonMapper<T> {
     List<T> findList(Query paramQuery);
 
     default T findOne(Query paramQuery){

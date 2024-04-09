@@ -12,6 +12,6 @@ import org.apache.ibatis.annotations.Mapper;
  * @since 2024-03-12
  */
 @Mapper
-public interface AttributeInfoMapper extends CustomBaseMapper<AttributeInfo> {
+public interface AttributeInfoMapper extends CommonMapper<AttributeInfo> {
 
 }

@@ -12,6 +12,6 @@ import org.apache.ibatis.annotations.Mapper;
  * @since 2024-03-12
  */
 @Mapper
-public interface UserMapper extends CustomBaseMapper<User> {
-
+public interface UserMapper extends CommonMapper<User> {
+    User findOneByMobile(String mobile);
 }

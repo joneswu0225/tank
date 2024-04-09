@@ -8,6 +8,7 @@ import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
 
+import com.baomidou.mybatisplus.core.toolkit.StringUtils;
 import com.jones.tank.object.dataapi.TableType;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
@@ -29,8 +30,10 @@ import lombok.experimental.Accessors;
 @TableName("table_info")
 @ApiModel(value = "TableInfo对象", description = "")
 public class TableInfo implements Serializable {
-    public static final String TABLE_TYPE_ENTITY = "ENTITY";
-    public static final String TABLE_TYPE_ATTR = "ATTR";
+    private static final String TABLE_TYPE_ENTITY = "ENTITY";
+    private static final String TABLE_TYPE_ATTR = "ATTR";
+    private static final Integer TABLE_LOGIC_DELETE = 1;
+    private static final Integer TABLE_PHYSICAL_DELETE = 0;
     private static final long serialVersionUID = 1L;
 
     @TableId(value = "id", type = IdType.AUTO)
@@ -68,10 +71,31 @@ public class TableInfo implements Serializable {
     @TableField("rel3")
     private String rel3;
 
+    @TableField("logic_delete")
+    private Integer logicDelete;
+
     private Set<String> keys = new HashSet<>();
 
     public boolean isAttrTable(){
         return TableType.ATTR.equals(this.tableType);
+    }
+
+    public boolean isLogicDelete(){
+        return logicDelete > 0;
+    }
+
+    public void initKeyInfo(){
+        HashSet<String> keys = new HashSet<>();
+        if (StringUtils.isNotBlank(getKey1())) {
+            keys.add("id".equals(getKey1()) ? getName() + "_id" : getKey1());
+        }
+        if (StringUtils.isNotBlank(getKey2())) {
+            keys.add(getKey2());
+        }
+        if (StringUtils.isNotBlank(getKey3())) {
+            keys.add(getKey3());
+        }
+        this.keys = keys;
     }
 
 }

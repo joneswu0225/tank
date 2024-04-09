@@ -12,6 +12,6 @@ import org.apache.ibatis.annotations.Mapper;
  * @since 2024-03-12
  */
 @Mapper
-public interface AttributeValueUserMapper extends CustomBaseMapper<AttributeValueUser> {
+public interface AttributeValueUserMapper extends CommonMapper<AttributeValueUser> {
 
 }

@@ -49,7 +49,7 @@
         where id=#{id}
     </update>
     <select id="findList" resultType="Param" parameterType="Query">
-        <include refid="com.jones.tank.repository.CustomBaseMapper.startPage" />
+        <include refid="com.jones.tank.repository.CommonMapper.startPage" />
         select * from param where deleted=0
         <if test="name != null and name !=''">
             and name = #{name}
@@ -58,7 +58,7 @@
             and type = #{type}
         </if>
         order by id desc
-        <include refid="com.jones.tank.repository.CustomBaseMapper.endPage" />
+        <include refid="com.jones.tank.repository.CommonMapper.endPage" />
     </select>
     <select id="findCount" resultType="java.lang.Long" parameterType="Query">
         select count(*) from message where deleted=0

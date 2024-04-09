@@ -26,35 +26,31 @@ import java.util.Map;
  */
 @RestController
 @RequestMapping("/data")
-@Api(value = "代理接口", tags = {"代理接口"})
+//@Api(value = "代理接口", tags = {"代理接口"})
 public class DataController {
     @Autowired
     private DataService service;
 
 
-    private void init(){
-
-    }
     @RequestMapping(value="get", method={RequestMethod.GET})
     public BaseResponse get(HttpServletRequest request, HttpServletResponse response) throws Exception{
-        return service.select(request.getRequestURI(), request.getParameterMap());
+        return service.get(request.getRequestURI(), request.getParameterMap());
     }
 
     @RequestMapping(value="post", method={RequestMethod.POST})
     public BaseResponse post(@RequestBody Map<String, Object> params, HttpServletRequest request, HttpServletResponse response) throws Exception{
-        System.out.println("cc" + request.getRequestURI());
-        return BaseResponse.builder().build();
+        return service.post(request.getRequestURI(), request.getParameterMap());
     }
 
-    @RequestMapping(value="patch", method={RequestMethod.PATCH})
-    public BaseResponse patch(@RequestBody Map<String, Object> params, HttpServletRequest request, HttpServletResponse response) throws Exception{
-        return post(params, request, response);
-    }
+//    @RequestMapping(value="patch", method={RequestMethod.PATCH})
+//    public BaseResponse patch(@RequestBody Map<String, Object> params, HttpServletRequest request, HttpServletResponse response) throws Exception{
+//        return post(params, request, response);
+//    }
 
-    @RequestMapping(value="put", method={RequestMethod.PUT})
-    public BaseResponse put(@RequestBody Map<String, Object> params, HttpServletRequest request, HttpServletResponse response) throws Exception{
-        return post(params, request, response);
-    }
+//    @RequestMapping(value="put", method={RequestMethod.PUT})
+//    public BaseResponse put(@RequestBody Map<String, Object> params, HttpServletRequest request, HttpServletResponse response) throws Exception{
+//        return post(params, request, response);
+//    }
 
     @RequestMapping(value="delete", method={RequestMethod.DELETE})
     public BaseResponse delete(@RequestBody Map<String, Object> params, HttpServletRequest request, HttpServletResponse response) throws Exception{

@@ -12,6 +12,6 @@ import org.apache.ibatis.annotations.Mapper;
  * @since 2024-03-12
  */
 @Mapper
-public interface ParamFieldMapper extends CustomBaseMapper<ParamField> {
+public interface ParamFieldMapper extends CommonMapper<ParamField> {
 
 }

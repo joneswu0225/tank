@@ -23,8 +23,8 @@
     </sql>
 
     <insert id="insertRecord">
-        insert into table_info(name, detail, entity_type, table_type, key1, key2, key3, rel1, rel2, rel3)
-        values(#{name},#{detail},#{entityType},#{tableType},#{key1},#{key2},#{key3},#{rel1},#{rel2},#{rel3})
+        insert into table_info(name, detail, entity_type, table_type, key1, key2, key3, rel1, rel2, rel3, logic_delete)
+        values(#{name},#{detail},#{entityType},#{tableType},#{key1},#{key2},#{key3},#{rel1},#{rel2},#{rel3},#{logicDelete})
     </insert>
     <update id="update" parameterType="com.jones.tank.object.BaseObject" >
         update table_info
@@ -59,10 +59,13 @@
         <if test="rel3 != null and rel3 !=''">
             and rel3 = #{rel3}
         </if>
+        <if test="logicDelete != null ">
+            and logic_delete = #{logicDelete}
+        </if>
         where id=#{id}
     </update>
     <select id="findList" resultType="TableInfo" parameterType="Query">
-        <include refid="com.jones.tank.repository.CustomBaseMapper.startPage" />
+        <include refid="com.jones.tank.repository.CommonMapper.startPage" />
         select * from table_info where deleted=0
         <if test="name != null and name !=''">
             and name = #{name}
@@ -74,7 +77,7 @@
             and table_type = #{tableType}
         </if>
         order by id desc
-        <include refid="com.jones.tank.repository.CustomBaseMapper.endPage" />
+        <include refid="com.jones.tank.repository.CommonMapper.endPage" />
     </select>
     <select id="findCount" resultType="java.lang.Long" parameterType="Query">
         select count(*) from table_info where deleted=0
@@ -101,7 +104,7 @@
         </if>
     </select>
     <update id="delete">
-        update interface set deleted=1 where id=#{id}
+        update table_info set deleted=1 where id=#{id}
     </update>
 
 

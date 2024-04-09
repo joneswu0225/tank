@@ -12,6 +12,6 @@ import org.apache.ibatis.annotations.Mapper;
  * @since 2024-03-12
  */
 @Mapper
-public interface TableInfoMapper extends CustomBaseMapper<TableInfo> {
+public interface TableInfoMapper extends CommonMapper<TableInfo> {
 
 }

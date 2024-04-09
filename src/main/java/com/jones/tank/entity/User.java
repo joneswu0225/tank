@@ -8,6 +8,8 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import lombok.Builder;
+import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -20,12 +22,16 @@ import lombok.experimental.Accessors;
  * @author jones
  * @since 2024-03-12
  */
-@Getter
-@Setter
+
+@Data
+@Builder
 @Accessors(chain = true)
 @TableName("user")
 @ApiModel(value = "User对象", description = "")
 public class User implements Serializable {
+    public static final int COMMON = 0;
+    public static final int ENTMANAGER = 1;
+    public static final int ADMIN = 2;
 
     private static final long serialVersionUID = 1L;
 
@@ -76,6 +82,8 @@ public class User implements Serializable {
 
     @TableField("unionid")
     private String unionid;
+    @TableField("weprogram_code")
+    private String weprogramCode;
 
 
 }

@@ -48,6 +48,5 @@ public class Param implements Serializable {
     private List<String> requiredFields = new ArrayList<>();
     private List<ParamField> fields = new ArrayList<>();
     private Map<String, ParamField> fieldMap;
-    private List<String> tableNames = new ArrayList<>();
 
 }

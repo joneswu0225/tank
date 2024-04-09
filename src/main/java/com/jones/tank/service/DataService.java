@@ -6,20 +6,15 @@ import com.jones.tank.entity.query.*;
 import com.jones.tank.object.BaseResponse;
 import com.jones.tank.object.ErrorCode;
 import com.jones.tank.object.dataapi.DbType;
-import com.jones.tank.object.dataapi.TableType;
 import com.jones.tank.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RequestMethod;
 
 import javax.annotation.PostConstruct;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
-
-import static com.jones.tank.object.dataapi.DbType.*;
 
 /**
  * <p>
@@ -47,68 +42,40 @@ public class DataService {
 
     private ConcurrentHashMap<String, Interface> interfaceMap = new ConcurrentHashMap<>();
 
-    private void handleTableInfo(){
-
-
-//        Map<String, List<TableInfo>>
-    }
     @PostConstruct
-    private void refresh(){
-        Map<String, TableInfo> tableInfoMap = new HashMap<>();
-
+    public void refresh(){
         List<Interface> interfaceList = interfaceMapper.findAll(new InterfaceQuery());
-        List<AttributeInfo> attributeInfoList = attributeInfoMapper.findAll(new AttributeInfoQuery());
         List<Param> paramList = paramMapper.findAll(new ParamQuery());
-        Map<Long, AttributeInfo> attributeInfoMap = new HashMap<>();
+        List<AttributeInfo> attributeInfoList = attributeInfoMapper.findAll(new AttributeInfoQuery());
         List<TableInfo> tableInfoList = tableInfoMapper.findAll(new TableInfoQuery());
+
+        Map<String, TableInfo> tableInfoMap = new HashMap<>();
+        Map<Long, AttributeInfo> attributeInfoMap = new HashMap<>();
         Map<Long, TableInfo> tableInfoIdMap = new HashMap<>();
+        Map<Long, Param> paramMap = new HashMap<>();
         for(TableInfo table: tableInfoList){
             tableInfoIdMap.put(table.getId(), table);
             tableInfoMap.put(table.getName(), table);
-            if (StringUtils.isEmpty(table.getKey1())) {
-                continue;
-            } else {
-                table.getKeys().add("id".equals(table.getKey1()) ? table.getName() + "_id" : table.getKey1());
-            }
-            if (StringUtils.isEmpty(table.getKey2())) {
-                continue;
-            } else {
-                table.getKeys().add(table.getKey2());
-            }
-            if (!StringUtils.isEmpty(table.getKey3())) {
-                table.getKeys().add(table.getKey3());
-            }
+            table.initKeyInfo();
         }
         for(AttributeInfo attributeInfo: attributeInfoList){
             attributeInfo.setTableInfo(tableInfoIdMap.get(attributeInfo.getTableId()));
             attributeInfoMap.put(attributeInfo.getId(), attributeInfo);
         }
-        paramList.forEach(p->{
-            p.getFields().forEach(k->{k.setAttribute(attributeInfoMap.get(k.getAttributeId()));});
-            p.setFieldMap(p.getFields().stream().collect(Collectors.toMap(k->k.getName(), k->k)));
-        });
-        Map<Long, Param> paramMap = new HashMap<>();
         for(Param param: paramList){
+            paramMap.put(param.getId(), param);
+            param.getFields().forEach(k->{k.setAttribute(attributeInfoMap.get(k.getAttributeId()));});
             param.setRequiredFields(param.getFields().stream().filter(p->ParamField.REQUIRED.equals(p.getRequired())).map(ParamField::getName).collect(Collectors.toList()));
             param.setFieldMap(param.getFields().stream().collect(Collectors.toMap(k->k.getName(), k->k)));
-//            param.getTableNames().addAll(param.getFields().stream().map(p->p.getAttribute().getTableInfo().getName()).collect(Collectors.toList()))
-            paramMap.put(param.getId(), param);
         }
         ConcurrentHashMap<String, Interface> pathMap = new ConcurrentHashMap<>();
         for(Interface item: interfaceList){
+            item.setQuery(paramMap.get(item.getQueryId()));
             item.setParam(paramMap.get(item.getParamId()));
             item.setResult(paramMap.get(item.getResultId()));
-            for(ParamField field: item.getParam().getFields()) {
-                item.getTableParams().putIfAbsent(field.getAttribute().getTableInfo(), new HashSet<>());
-                item.getTableParams().get(field.getAttribute().getTableInfo()).add(field.getAttribute());
-                item.getParamFieldMap().put(field.getName(), field);
-            }
-            for(ParamField field: item.getResult().getFields()){
-                item.getTableParams().putIfAbsent(field.getAttribute().getTableInfo(), new HashSet<>());
-                item.getTableParams().get(field.getAttribute().getTableInfo()).add(field.getAttribute());
-            }
+            item.setOrder(paramMap.get(item.getOrderId()));
             item.generateJoinInfo(tableInfoMap);
-            pathMap.put(item.getPath(), item);
+            pathMap.put(getPathMapKey(item.getPath(), item.getRequestMethod()), item);
         }
         interfaceMap = pathMap;
     }
@@ -135,48 +102,91 @@ public class DataService {
         return BaseResponse.builder().build();
     }
 
-    public List<Map<String, Object>> handleSelect(Interface api, Map<String, String[]> requestParam){
-        // format request params
+    public List<Map<String, Object>> handleSelect(Interface api, Map<String, String> requestParam){
+        return sqlMapper.sqlSelectList(api.getSelectTemplate(requestParam), requestParam);
+    }
+
+    public String handleUpdate(Interface api, Map<String, String> requestParam){
+        Map<TableInfo, Set<AttributeInfo>> tableAttribute = api.getTableParams();
+        StringJoiner sj = new StringJoiner(",");
+        for(Map.Entry<String, LinkedList<TableInfo>> entityTables: api.getEntityTableMap().entrySet()){
+            for(TableInfo tableInfo: entityTables.getValue()){
+                Integer result = sqlMapper.sqlUpdate(api.getUpdateTemplate(tableInfo, requestParam), requestParam);
+                sj.add(result.toString());
+            }
+        }
+        return sj.toString();
+    }
+
+    public String handleInsert(Interface api, Map<String, String> requestParam){
+        StringJoiner sj = new StringJoiner(",");
+        for(Map.Entry<String, LinkedList<TableInfo>> entityTables: api.getEntityTableMap().entrySet()){
+            for(TableInfo tableInfo: entityTables.getValue()){
+                Integer result = sqlMapper.sqlInsert(api.getUpdateTemplate(tableInfo, requestParam), requestParam);
+                sj.add(result.toString());
+            }
+        }
+        return sj.toString();
+    }
+
+    public String handleDelete(Interface api, Map<String, String> requestParam){
+        StringJoiner sj = new StringJoiner(",");
+        for(Map.Entry<String, LinkedList<TableInfo>> entityTables: api.getEntityTableMap().entrySet()){
+            for(TableInfo tableInfo: entityTables.getValue()){
+                Integer result = sqlMapper.sqlInsert(api.getDeleteteTemplate(tableInfo, requestParam), requestParam);
+                sj.add(result.toString());
+            }
+        }
+        return sj.toString();
+    }
+
+    public BaseResponse handleDbExecute(Interface api,  Map<String, String[]> requestParam){
         Map<String, String> requestParams = new HashMap<>();
-        for(ParamField field: api.getParam().getFields()) {
+        // fill default value
+        for(ParamField field: api.getQuery().getFields()) {
             if(!StringUtils.isEmpty(field.getDefaultValue())){
                 requestParams.put(field.getName(), field.getDefaultValue());
             }
         }
+        // format request params
         for(Map.Entry<String, String[]> param: requestParam.entrySet()){
             requestParams.put(param.getKey(),
-                    api.getParamFieldMap().get(param.getKey()).getOperationType().needCollectionParam() ?
+                    api.getQueryFieldMap().get(param.getKey()).getOperationType().needCollectionParam() ?
                             String.join("','",  param.getValue()) : param.getValue()[0]
             );
         }
-        // TODO order by        .append(" ORDER BY ")
-        String query = api.getSelectTemplate(requestParams);
-        System.out.printf(query);
-        return sqlMapper.sqlSelectList(query, requestParams);
-    }
-
-    public void handleUpsert(Interface api, Map<String, String[]> requestParam){
-
-    }
-    public BaseResponse handleDbExecute(Interface api,  Map<String, String[]> requestParam){
+        Object result = null;
         switch (api.getType()){
             case SELECT:
-                List data = handleSelect(api, requestParam);
-                return BaseResponse.builder().data(data).build();
+                result = handleSelect(api, requestParams);
+                break;
+            case INSERT:
+                result = handleInsert(api, requestParams);
+                break;
+            case UPDATE:
+                result = handleInsert(api, requestParams);
+                break;
+            case DELETE:
+                result = handleDelete(api, requestParams);
+                break;
             default:
-                handleUpsert(api, requestParam);
                 break;
         }
-        return BaseResponse.builder().build();
+        return BaseResponse.builder().data(result).build();
     }
+
+    private static String getPathMapKey(String path, RequestMethod method){
+        return method.name().toLowerCase() + path;
+    }
+
     public BaseResponse handleRequest(String path, Map<String, String[]> requestParam, RequestMethod method){
         path = path.substring(REQUEST_PREFIX.length());
         // validate request path
         if(!interfaceMap.containsKey(path)){
             BaseResponse.builder().code(ErrorCode.API_PATH_INVALID).build();
         }
+        Interface api = interfaceMap.get(getPathMapKey(path, method));
         // validate request method
-        Interface api = interfaceMap.get(path);
         if(!method.equals(api.getRequestMethod())){
             BaseResponse.builder().code(ErrorCode.API_METHOD_INVALID).build();
         }
@@ -184,8 +194,12 @@ public class DataService {
         if(!method.equals(api.getRequestMethod())){
             BaseResponse.builder().code(ErrorCode.API_METHOD_INVALID).build();
         }
+        // upsert接口的实体个数不能超过一个
+        if(DbType.INSERT.equals(api.getType()) && (api.getEntityTableMap().keySet().size() > 1)){
+            return BaseResponse.builder().code(ErrorCode.API_UPSERT_DUPLICATE_ENTITY).build();
+        }
         // validate request param
-        BaseResponse resp = validateRequestParam(api.getParam(), requestParam);
+        BaseResponse resp = validateRequestParam(api.getQuery(), requestParam);
         if(!resp.isSuceeded()){
             return resp;
         }
@@ -193,11 +207,11 @@ public class DataService {
         return handleDbExecute(api, requestParam);
     }
 
-    public BaseResponse insert(String path, Map<String, String[]> param){
+    public BaseResponse post(String path, Map<String, String[]> param){
         return handleRequest(path, param, RequestMethod.POST);
     }
 
-    public BaseResponse select(String path, Map<String, String[]> param){
+    public BaseResponse get(String path, Map<String, String[]> param){
         return handleRequest(path, param, RequestMethod.GET);
     }
 

@@ -2,14 +2,14 @@ package com.jones.tank.object.dataapi;
 
 
 public enum OperationType {
-	EQ("=%s", "equals"),
-	GT(">%s","greater than"),
-	LT("<%s","less than"),
-	GTE(">=%s","greater than or equals"),
-	LTE("<=%s","less than or equals"),
-	IN("in (%s)","in"),
-	NIN("not in (%s)","not in"),
-	LK("'%%%s%%'","like");
+	EQ(" =%s ", "equals"),
+	GT(" >%s ","greater than"),
+	LT(" <%s ","less than"),
+	GTE(" >=%s ","greater than or equals"),
+	LTE(" <=%s ","less than or equals"),
+	IN(" in (%s) ","in"),
+	NIN(" not in (%s) ","not in"),
+	LK(" like concat('%%',%s,'%%') ","like");
 
 
 	public final String symbol;

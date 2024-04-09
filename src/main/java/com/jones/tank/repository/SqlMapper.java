@@ -67,6 +67,10 @@ public class SqlMapper{
         return (Map) this.getOne(list);
     }
 
+    public Integer sqlSelectCount(String sql){
+        return this.sqlSelectList(sql).size();
+    }
+
     /**
      * 查询单条数据返回Map<String, Object>
      *

@@ -46,7 +46,7 @@
         where id=#{id}
     </update>
     <select id="findList" resultType="Interface" parameterType="Query">
-        <include refid="com.jones.tank.repository.CustomBaseMapper.startPage" />
+        <include refid="com.jones.tank.repository.CommonMapper.startPage" />
         select * from interface where deleted=0
         <if test="path != null and path !=''">
             and path = #{path}
@@ -67,7 +67,7 @@
             and result_id = #{resultId}
         </if>
         order by id desc
-        <include refid="com.jones.tank.repository.CustomBaseMapper.endPage" />
+        <include refid="com.jones.tank.repository.CommonMapper.endPage" />
     </select>
     <select id="findCount" resultType="java.lang.Long" parameterType="Query">
         select count(*) from interface where deleted=0

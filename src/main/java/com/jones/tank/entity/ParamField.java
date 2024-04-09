@@ -32,6 +32,8 @@ import lombok.experimental.Accessors;
 public class ParamField implements Serializable {
     public static final Integer REQUIRED = 1;
     public static final Integer NOT_REQUIRED = 0;
+    public static final String ORDER_BY_ASC = "0";
+    public static final String ORDER_BY_DESC = "1";
     private static final long serialVersionUID = 1L;
 
     @TableId(value = "id", type = IdType.AUTO)
@@ -103,6 +105,11 @@ public class ParamField implements Serializable {
 //
     public String getSelectPart() {
         return attribute.getSelectPart();
+    }
+
+
+    public String getOrderPart(){
+        return String.format("%s %s", attribute.getSqlFieldName(), ORDER_BY_DESC.equals(defaultValue) ? "DESC": "");
     }
 //
 //    public String getFromPart(){

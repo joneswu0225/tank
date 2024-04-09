@@ -1,13 +1,13 @@
 package com.jones.tank.object;
 
 import com.jones.tank.entity.query.Query;
-import com.jones.tank.repository.CustomBaseMapper;
+import com.jones.tank.repository.CommonMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-public class CustomServiceImpl<M extends CustomBaseMapper<T>, T>  implements ICustomService<T> {
+public class CustomServiceImpl<M extends CommonMapper<T>, T>  implements ICustomService<T> {
     @Autowired
     protected M baseMapper;
 

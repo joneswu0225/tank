@@ -17,6 +17,7 @@ public enum ErrorCode {
 	LOGIN_FAIL("1003", "验证码或密码错误"),
 	WECHAT_LOGIN_VERIFY_FAIL("1004", "微信小程序登录验证失败"),
 	WECHAT_NO_PASSWD("1005", "微信小程序注册没有密码"),
+	WECHAT_CODE_NOTEXISTS("1008", "微信小程序CODE不存在，需要重新授权手机号"),
 	VERIFY_CODE_FAILED("1006", "验证码错误"),
 	ADMIN_LOGIN_DENIED("1007", "非管理员无法登录管理系统"),
 
@@ -31,6 +32,7 @@ public enum ErrorCode {
 
 	API_ENTITY_INVALID("1023", "参数校验失败"),
 	API_PARAM_INVALID("1024", "当前版本仅支持单个实体的接口请求"),
+	API_UPSERT_DUPLICATE_ENTITY("1025", "upsert接口的实体个数不能超过一个"),
 
 	//权限不够
 	AUTH_PROJECT_UNPUBLIC_NOLOGIN("2001", "非登录状态无权访问非公开项目"),
