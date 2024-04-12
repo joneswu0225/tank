@@ -35,8 +35,8 @@ public class User implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    @TableId(value = "id", type = IdType.AUTO)
-    private Long id;
+    @TableId(value = "user_id", type = IdType.AUTO)
+    private Long userId;
 
     @TableField("mobile")
     private String mobile;
@@ -82,8 +82,8 @@ public class User implements Serializable {
 
     @TableField("unionid")
     private String unionid;
-    @TableField("weprogram_code")
-    private String weprogramCode;
+    @TableField("weprogram_session_key")
+    private String weprogramSessionKey;
 
 
 }

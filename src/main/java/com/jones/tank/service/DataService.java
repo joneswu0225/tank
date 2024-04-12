@@ -8,6 +8,7 @@ import com.jones.tank.object.ErrorCode;
 import com.jones.tank.object.dataapi.DbType;
 import com.jones.tank.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RequestMethod;
 
@@ -42,6 +43,7 @@ public class DataService {
 
     private ConcurrentHashMap<String, Interface> interfaceMap = new ConcurrentHashMap<>();
 
+//    @Scheduled(fixedRate = 10000)
     @PostConstruct
     public void refresh(){
         List<Interface> interfaceList = interfaceMapper.findAll(new InterfaceQuery());
@@ -80,14 +82,22 @@ public class DataService {
         interfaceMap = pathMap;
     }
 
-    public static BaseResponse validateRequestParam(Param param, Map<String, String[]> requestParam){
+    public static BaseResponse validateRequestParam(Param param, Map requestParam){
+        if(param == null || requestParam == null){
+            return BaseResponse.builder().build();
+        }
         // validate required param
-        if(!requestParam.keySet().containsAll(param.getRequiredFields())){
-            return BaseResponse.builder().code(ErrorCode.API_PARAM_INVALID).message("必填字段不能为空").build();
+        for (String requiredFiled : param.getRequiredFields()) {
+            if (!requestParam.containsKey(requiredFiled)) {
+                return BaseResponse.builder().code(ErrorCode.API_PARAM_INVALID).message(String.format("必填字段 %s 不能为空", requiredFiled)).build();
+            }
         }
         // validate content
-        for(String key: requestParam.keySet()){
+        for(Object key: requestParam.keySet()){
             ParamField field = param.getFieldMap().get(key);
+            if(field == null){
+                continue;
+            }
             String value = requestParam.get(key).toString();
             if(field.getValidateType() != null && !field.getValidateType().validate(value)){
                 return BaseResponse.builder().code(ErrorCode.API_PARAM_INVALID).message("字段 \"" + field.getName() + "\" " + field.getValidateType().getDescription()).build();
@@ -107,12 +117,14 @@ public class DataService {
     }
 
     public String handleUpdate(Interface api, Map<String, String> requestParam){
-        Map<TableInfo, Set<AttributeInfo>> tableAttribute = api.getTableParams();
         StringJoiner sj = new StringJoiner(",");
         for(Map.Entry<String, LinkedList<TableInfo>> entityTables: api.getEntityTableMap().entrySet()){
             for(TableInfo tableInfo: entityTables.getValue()){
-                Integer result = sqlMapper.sqlUpdate(api.getUpdateTemplate(tableInfo, requestParam), requestParam);
-                sj.add(result.toString());
+                String sqlTemplate = api.getUpdateTemplate(tableInfo, requestParam);
+                if(sqlTemplate != null) {
+                    Integer result = sqlMapper.sqlUpdate(sqlTemplate, requestParam);
+                    sj.add(result.toString());
+                }
             }
         }
         return sj.toString();
@@ -121,9 +133,17 @@ public class DataService {
     public String handleInsert(Interface api, Map<String, String> requestParam){
         StringJoiner sj = new StringJoiner(",");
         for(Map.Entry<String, LinkedList<TableInfo>> entityTables: api.getEntityTableMap().entrySet()){
+            TableInfo entityTable = entityTables.getValue().getFirst();
+            Long entityId = null;
             for(TableInfo tableInfo: entityTables.getValue()){
-                Integer result = sqlMapper.sqlInsert(api.getUpdateTemplate(tableInfo, requestParam), requestParam);
-                sj.add(result.toString());
+                if(tableInfo.equals(entityTable)){
+                    entityId = sqlMapper.sqlInsert(api.getInsertTemplate(tableInfo, requestParam), requestParam);
+                    requestParam.put(tableInfo.getEntityId(), entityId.toString());
+                    sj.add(entityId.toString());
+                } else if(entityId != null){
+                    Long result = sqlMapper.sqlInsert(api.getInsertTemplate(tableInfo, requestParam), requestParam);
+                    sj.add(result.toString());
+                }
             }
         }
         return sj.toString();
@@ -133,28 +153,51 @@ public class DataService {
         StringJoiner sj = new StringJoiner(",");
         for(Map.Entry<String, LinkedList<TableInfo>> entityTables: api.getEntityTableMap().entrySet()){
             for(TableInfo tableInfo: entityTables.getValue()){
-                Integer result = sqlMapper.sqlInsert(api.getDeleteteTemplate(tableInfo, requestParam), requestParam);
+                Integer result = sqlMapper.sqlUpdate(api.getDeleteteTemplate(tableInfo, requestParam), requestParam);
                 sj.add(result.toString());
             }
         }
         return sj.toString();
     }
 
-    public BaseResponse handleDbExecute(Interface api,  Map<String, String[]> requestParam){
+    private static final List<String> INNER_PARAM = Arrays.asList("page_size", "page_number");
+
+    private static Map<String, String> prepareParams(Interface api,  Map<String, String[]> queryParam, Map<String, String> requestParam){
         Map<String, String> requestParams = new HashMap<>();
+        // format request params
+        if(queryParam != null) {
+            for (Map.Entry<String, String[]> param : queryParam.entrySet()) {
+                String key = param.getKey();
+                if(INNER_PARAM.contains(key)){
+                    requestParams.put(key, param.getValue()[0]);
+                } else if(api.getFieldMap().containsKey(key)){
+                    requestParams.put(param.getKey(),
+                            api.getFieldMap().get(param.getKey()).getOperationType().needCollectionParam() ?
+                                    String.join("','", param.getValue()) : param.getValue()[0]
+                    );
+                }
+            }
+        }
+        if(requestParam!=null) {
+            for (Map.Entry<String, String> param : requestParam.entrySet()) {
+                requestParams.put(param.getKey(), param.getValue());
+            }
+        }
         // fill default value
-        for(ParamField field: api.getQuery().getFields()) {
-            if(!StringUtils.isEmpty(field.getDefaultValue())){
+        for(ParamField field: api.getFieldMap().values()) {
+            if(StringUtils.isNotBlank(field.getDefaultValue()) && !requestParams.containsKey(field.getName())){
                 requestParams.put(field.getName(), field.getDefaultValue());
             }
         }
-        // format request params
-        for(Map.Entry<String, String[]> param: requestParam.entrySet()){
-            requestParams.put(param.getKey(),
-                    api.getQueryFieldMap().get(param.getKey()).getOperationType().needCollectionParam() ?
-                            String.join("','",  param.getValue()) : param.getValue()[0]
-            );
-        }
+        return requestParams;
+    }
+
+    public Object handleTempledExecute(Interface api, Map<String, String> requestParams){
+        return sqlMapper.sqlSelectList(api.gets, requestParams)
+    }
+    public BaseResponse handleDbExecute(Interface api,  Map<String, String[]> queryParam, Map<String, String> requestParam){
+        Map<String, String> requestParams = prepareParams(api, queryParam, requestParam);
+
         Object result = null;
         switch (api.getType()){
             case SELECT:
@@ -164,7 +207,7 @@ public class DataService {
                 result = handleInsert(api, requestParams);
                 break;
             case UPDATE:
-                result = handleInsert(api, requestParams);
+                result = handleUpdate(api, requestParams);
                 break;
             case DELETE:
                 result = handleDelete(api, requestParams);
@@ -179,7 +222,7 @@ public class DataService {
         return method.name().toLowerCase() + path;
     }
 
-    public BaseResponse handleRequest(String path, Map<String, String[]> requestParam, RequestMethod method){
+    public BaseResponse handleRequest(String path, Map<String, String[]> queryParam, Map<String, String> requestParam, RequestMethod method){
         path = path.substring(REQUEST_PREFIX.length());
         // validate request path
         if(!interfaceMap.containsKey(path)){
@@ -199,20 +242,31 @@ public class DataService {
             return BaseResponse.builder().code(ErrorCode.API_UPSERT_DUPLICATE_ENTITY).build();
         }
         // validate request param
-        BaseResponse resp = validateRequestParam(api.getQuery(), requestParam);
+        BaseResponse resp = validateRequestParam(api.getQuery(), queryParam);
+        if(!resp.isSuceeded()){
+            return resp;
+        }
+        resp = validateRequestParam(api.getParam(), requestParam);
         if(!resp.isSuceeded()){
             return resp;
         }
         // construct request param to db execute
-        return handleDbExecute(api, requestParam);
+        return handleDbExecute(api, queryParam, requestParam);
     }
 
-    public BaseResponse post(String path, Map<String, String[]> param){
-        return handleRequest(path, param, RequestMethod.POST);
+    public BaseResponse post(String path, Map<String, String[]> query, Map<String, String> param){
+        return handleRequest(path, null, param, RequestMethod.POST);
     }
 
-    public BaseResponse get(String path, Map<String, String[]> param){
-        return handleRequest(path, param, RequestMethod.GET);
+    public BaseResponse put(String path, Map<String, String[]> query, Map<String, String> param){
+        return handleRequest(path, query, param, RequestMethod.PUT);
+    }
+
+    public BaseResponse get(String path, Map<String, String[]> query){
+        return handleRequest(path, query, null, RequestMethod.GET);
+    }
+    public BaseResponse delete(String path, Map<String, String[]> query){
+        return handleRequest(path, query, null, RequestMethod.DELETE);
     }
 
 

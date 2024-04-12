@@ -12,6 +12,7 @@ import com.jones.tank.object.dataapi.TableType;
 import com.jones.tank.object.dataapi.ValidateType;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -26,6 +27,7 @@ import lombok.experimental.Accessors;
  */
 @Getter
 @Setter
+//@Builder
 @Accessors(chain = true)
 @TableName("param_field")
 @ApiModel(value = "ParamField对象", description = "")
@@ -110,6 +112,10 @@ public class ParamField implements Serializable {
 
     public String getOrderPart(){
         return String.format("%s %s", attribute.getSqlFieldName(), ORDER_BY_DESC.equals(defaultValue) ? "DESC": "");
+    }
+
+    public boolean isInTable(TableInfo tableInfo){
+        return getAttribute().getTableInfo().equals(tableInfo);
     }
 //
 //    public String getFromPart(){

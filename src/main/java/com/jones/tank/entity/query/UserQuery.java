@@ -27,6 +27,6 @@ public class UserQuery extends Query {
     @ApiModelProperty(value="用户类型",name="userType")
     private Integer userType;
     @ApiParam(hidden = true)
-    private String weprogramCode;
+    private String openid;
 }
 

@@ -8,6 +8,7 @@ import org.apache.ibatis.mapping.SqlCommandType;
 import org.apache.ibatis.mapping.SqlSource;
 import org.apache.ibatis.scripting.LanguageDriver;
 import org.apache.ibatis.session.Configuration;
+import org.apache.ibatis.session.RowBounds;
 import org.apache.ibatis.session.SqlSession;
 import org.apache.ibatis.session.SqlSessionFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -135,6 +136,31 @@ public class SqlMapper{
     /**
      * 查询数据返回
      *
+     * @param sql   sql语句
+     * @param value 参数
+     * @return List<Map < String, Object>>
+     */
+    private static final String PAGE_SIZE = "page_size";
+    private static final Integer PAGE_SIZE_DEFAULT = 20;
+    private static final String PAGE_NUMBER = "page_number";
+    private static final Integer PAGE_NUMBER_DEFAULT = 1;
+    public List<Map<String, Object>> sqlSelectList(String sql, Map<String, String> params) {
+        Class<?> parameterType = params != null ? params.getClass() : null;
+        String msId = this.msUtils.selectDynamic(sql, parameterType);
+        if(params.containsKey(PAGE_SIZE) || params.containsKey(PAGE_NUMBER)){
+            Integer pageSize = Integer.valueOf(params.getOrDefault(PAGE_SIZE, "0"));
+            pageSize = pageSize == null ? PAGE_SIZE_DEFAULT : pageSize;
+            Integer pageNumber = Integer.valueOf(params.getOrDefault(PAGE_NUMBER, "0"));
+            pageNumber = pageNumber <= 0 ? PAGE_NUMBER_DEFAULT : pageNumber;
+            RowBounds rowBounds = new RowBounds(pageNumber*pageSize-pageSize, pageSize);
+            return this.sqlSession.selectList(msId, params, rowBounds);
+        }
+        return this.sqlSession.selectList(msId, params);
+    }
+
+    /**
+     * 查询数据返回
+     *
      * @param sql        sql语句
      * @param resultType 具体类型
      * @return List<T>
@@ -188,10 +214,10 @@ public class SqlMapper{
      * @param value 参数
      * @return int
      */
-    public int sqlInsert(String sql, Object value) {
+    public Long sqlInsert(String sql, Object value) {
         Class<?> parameterType = value != null ? value.getClass() : null;
         String msId = this.msUtils.insertDynamic(sql, parameterType);
-        return this.sqlSession.insert(msId, value);
+        return Long.valueOf(this.sqlSession.selectOne(msId, value).toString());
     }
 
     /**

@@ -1,5 +1,6 @@
 package com.jones.tank.service;
 
+import com.alibaba.fastjson.JSONObject;
 import com.jones.tank.entity.User;
 import com.jones.tank.entity.param.UserLoginParam;
 import com.jones.tank.entity.param.UserPasswordRestParam;
@@ -24,6 +25,8 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static com.jones.tank.util.WechatWeProgramUtil.getSessionKey;
 
 @Slf4j
 @Service
@@ -79,7 +82,7 @@ public class UserService extends CustomServiceImpl<UserMapper, User> {
 //            user.setUserId(userId);
 //            user.setSgname("新用户" + user.getMobile().substring(user.getMobile().length()-4));
 //            mapper.insertProfile(user);
-            return BaseResponse.builder().data(user.getId()).build();
+            return BaseResponse.builder().data(user.getUserId()).build();
         } else {
             return BaseResponse.builder().code(ErrorCode.REGIST_MOBILE_EXISTS).build();
         }
@@ -100,7 +103,7 @@ public class UserService extends CustomServiceImpl<UserMapper, User> {
         if(users.size() == 1){
             User user_db = users.get(0);
             User user_update = User.builder().verifyCode(verifyCode).build();
-            user_update.setId(user_db.getId());
+            user_update.setUserId(user_db.getUserId());
             mapper.update(user_update);
             AliMnsSender.sendMns(mobile, verifyCode);
             return BaseResponse.builder().build();
@@ -124,14 +127,14 @@ public class UserService extends CustomServiceImpl<UserMapper, User> {
         }
         if(param.getVerifyCode() != null && param.getVerifyCode().equals(user.getVerifyCode())) {
             User user_update = User.builder().password(param.getPassword()).build();
-            user_update.setId(user.getId());
+            user_update.setUserId(user.getUserId());
             mapper.update(user_update);
-            return BaseResponse.builder().data(user_update.getId()).build();
+            return BaseResponse.builder().data(user_update.getUserId()).build();
         } if(param.getPasswordOld() != null && param.getPasswordOld().equals(user.getPassword())) {
             User user_update = User.builder().password(param.getPassword()).build();
-            user_update.setId(user.getId());
+            user_update.setUserId(user.getUserId());
             mapper.update(user_update);
-            return BaseResponse.builder().data(user_update.getId()).build();
+            return BaseResponse.builder().data(user_update.getUserId()).build();
         } else{
             return BaseResponse.builder().code(ErrorCode.VERIFY_CODE_FAILED).build();
 
@@ -169,11 +172,11 @@ public class UserService extends CustomServiceImpl<UserMapper, User> {
         LocalDateTime now = LocalDateTime.now();
 //        User user_db = users.get(0);
         user.setLastLoginTime(now);
-        User user_update = User.builder().id(user.getId()).lastLoginTime(now).build();
+        User user_update = User.builder().userId(user.getUserId()).lastLoginTime(now).build();
         mapper.update(user_update);
         Map<String, Object> result = new HashMap<>();
         String authorization = "Basic" + UuidUtil.generate().toUpperCase();
-        result.put("id", user.getId());
+        result.put("id", user.getUserId());
         // 返回用户基本信息
         // 从enterprise_user表中查询所有的企业
         // 如果是管理员则不返回
@@ -193,7 +196,8 @@ public class UserService extends CustomServiceImpl<UserMapper, User> {
     public BaseResponse doWxLogin(UserWXLoginParam param){
         User user = null;
         if(param.getEncryptedData() == null) {
-            user = mapper.findOne(UserQuery.builder().weprogramCode(param.getCode()).build());
+            JSONObject result = WechatWeProgramUtil.getSessionKey(param.getCode());
+            user = mapper.findOne(UserQuery.builder().openid(result.getString("openid")).build());
             if(user==null){
                 return BaseResponse.builder().code(ErrorCode.WECHAT_CODE_NOTEXISTS).build();
             }
@@ -204,9 +208,9 @@ public class UserService extends CustomServiceImpl<UserMapper, User> {
             }
             user = mapper.findOneByMobile(wechatInfo.get("mobile"));
             if(user == null){
-                add(User.builder().mobile(wechatInfo.get("mobile")).userType(User.COMMON).weprogramCode(param.getCode()).openid(wechatInfo.get("openid")).unionid(wechatInfo.get("unionid")).build());
+                add(User.builder().mobile(wechatInfo.get("mobile")).userType(User.COMMON).openid(wechatInfo.get("openid")).unionid(wechatInfo.get("unionid")).build());
             } else if (StringUtils.hasLength(user.getOpenid()) || StringUtils.hasLength(user.getUnionid())) {
-                mapper.update(User.builder().id(user.getId()).weprogramCode(param.getCode()).openid(wechatInfo.get("openid")).unionid(wechatInfo.get("unionid")).build());
+                mapper.update(User.builder().userId(user.getUserId()).openid(wechatInfo.get("openid")).unionid(wechatInfo.get("unionid")).build());
             }
         }
         return doLogin(UserLoginParam.builder().mobile(user.getMobile()).password(user.getPassword()).build(), ApplicationConst.APP_SOURCE_WEIXIN);

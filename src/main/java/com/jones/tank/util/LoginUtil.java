@@ -83,7 +83,7 @@ public class LoginUtil {
 
     private static final int COOKIE_MAX_AGE = 3600*24*1000;
     public void setUser(String authorization, User user) {
-        authorization = authorization.replace(" ", "") + user.getId();
+        authorization = authorization.replace(" ", "") + user.getUserId();
         System.out.printf("set authorization:" + authorization);
         ResponseCookie cookie = ResponseCookie.from(APP_AUTH, authorization)
                 .secure(true).domain(APP_DOMAIN).path("/").maxAge(COOKIE_MAX_AGE)
@@ -91,7 +91,7 @@ public class LoginUtil {
         ResponseCookie mobileCookie = ResponseCookie.from(USER_MOBILE, user.getMobile())
                 .secure(true).domain(APP_DOMAIN).path("/").maxAge(COOKIE_MAX_AGE)
                 .sameSite("None").build();
-        ResponseCookie userIdCookie = ResponseCookie.from(USER_ID, user.getId().toString())
+        ResponseCookie userIdCookie = ResponseCookie.from(USER_ID, user.getUserId().toString())
                 .secure(true).domain(APP_DOMAIN).path("/").maxAge(COOKIE_MAX_AGE)
                 .sameSite("None").build();
         StringJoiner sj = new StringJoiner(";");

@@ -87,7 +87,7 @@ public class TableInfo implements Serializable {
     public void initKeyInfo(){
         HashSet<String> keys = new HashSet<>();
         if (StringUtils.isNotBlank(getKey1())) {
-            keys.add("id".equals(getKey1()) ? getName() + "_id" : getKey1());
+            keys.add(getKey1());
         }
         if (StringUtils.isNotBlank(getKey2())) {
             keys.add(getKey2());
@@ -96,6 +96,10 @@ public class TableInfo implements Serializable {
             keys.add(getKey3());
         }
         this.keys = keys;
+    }
+
+    public String getEntityId(){
+        return this.key1;
     }
 
 }

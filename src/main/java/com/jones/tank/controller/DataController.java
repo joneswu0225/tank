@@ -38,8 +38,8 @@ public class DataController {
     }
 
     @RequestMapping(value="post", method={RequestMethod.POST})
-    public BaseResponse post(@RequestBody Map<String, Object> params, HttpServletRequest request, HttpServletResponse response) throws Exception{
-        return service.post(request.getRequestURI(), request.getParameterMap());
+    public BaseResponse post(@RequestBody Map<String, String> params, HttpServletRequest request, HttpServletResponse response) throws Exception{
+        return service.post(request.getRequestURI(), request.getParameterMap(), params);
     }
 
 //    @RequestMapping(value="patch", method={RequestMethod.PATCH})
@@ -47,14 +47,14 @@ public class DataController {
 //        return post(params, request, response);
 //    }
 
-//    @RequestMapping(value="put", method={RequestMethod.PUT})
-//    public BaseResponse put(@RequestBody Map<String, Object> params, HttpServletRequest request, HttpServletResponse response) throws Exception{
-//        return post(params, request, response);
-//    }
+    @RequestMapping(value="put", method={RequestMethod.PUT})
+    public BaseResponse put(@RequestBody Map<String, String> params, HttpServletRequest request, HttpServletResponse response) throws Exception{
+        return service.put(request.getRequestURI(), request.getParameterMap(), params);
+    }
 
     @RequestMapping(value="delete", method={RequestMethod.DELETE})
-    public BaseResponse delete(@RequestBody Map<String, Object> params, HttpServletRequest request, HttpServletResponse response) throws Exception{
-        return post(params, request, response);
+    public BaseResponse delete(HttpServletRequest request, HttpServletResponse response) throws Exception{
+        return service.delete(request.getRequestURI(), request.getParameterMap());
     }
 
 }
