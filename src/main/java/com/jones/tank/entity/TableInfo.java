@@ -79,6 +79,9 @@ public class TableInfo implements Serializable {
     public boolean isAttrTable(){
         return TableType.ATTR.equals(this.tableType);
     }
+    public boolean isEntityTable(){
+        return TableType.ENTITY.equals(this.tableType);
+    }
 
     public boolean isLogicDelete(){
         return logicDelete > 0;

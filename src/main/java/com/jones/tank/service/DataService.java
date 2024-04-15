@@ -7,6 +7,7 @@ import com.jones.tank.object.BaseResponse;
 import com.jones.tank.object.ErrorCode;
 import com.jones.tank.object.dataapi.DbType;
 import com.jones.tank.repository.*;
+import com.jones.tank.util.LoginUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -98,7 +99,12 @@ public class DataService {
             if(field == null){
                 continue;
             }
-            String value = requestParam.get(key).toString();
+            String value = null;
+            if(requestParam.get(key) instanceof String[]){
+                value = String.join(",", (String[])requestParam.get(key));
+            }  else {
+                value = requestParam.get(key).toString();
+            }
             if(field.getValidateType() != null && !field.getValidateType().validate(value)){
                 return BaseResponse.builder().code(ErrorCode.API_PARAM_INVALID).message("字段 \"" + field.getName() + "\" " + field.getValidateType().getDescription()).build();
             }
@@ -127,7 +133,8 @@ public class DataService {
                 }
             }
         }
-        return sj.toString();
+        String result = sj.toString();
+        return StringUtils.isEmpty(result) ? null : result;
     }
 
     public String handleInsert(Interface api, Map<String, String> requestParam){
@@ -153,14 +160,18 @@ public class DataService {
         StringJoiner sj = new StringJoiner(",");
         for(Map.Entry<String, LinkedList<TableInfo>> entityTables: api.getEntityTableMap().entrySet()){
             for(TableInfo tableInfo: entityTables.getValue()){
-                Integer result = sqlMapper.sqlUpdate(api.getDeleteteTemplate(tableInfo, requestParam), requestParam);
-                sj.add(result.toString());
+                String sqlTemplate = api.getDeleteteTemplate(tableInfo, requestParam);
+                if(sqlTemplate != null){
+                    Integer result = sqlMapper.sqlUpdate(sqlTemplate, requestParam);
+                    sj.add(result.toString());
+                }
             }
         }
-        return sj.toString();
+        String result = sj.toString();
+        return StringUtils.isEmpty(result) ? null : result;
     }
 
-    private static final List<String> INNER_PARAM = Arrays.asList("page_size", "page_number");
+    private static final List<String> INNER_PARAM = Arrays.asList("page_size", "page_number", "login_user_id");
 
     private static Map<String, String> prepareParams(Interface api,  Map<String, String[]> queryParam, Map<String, String> requestParam){
         Map<String, String> requestParams = new HashMap<>();
@@ -168,19 +179,24 @@ public class DataService {
         if(queryParam != null) {
             for (Map.Entry<String, String[]> param : queryParam.entrySet()) {
                 String key = param.getKey();
+                String value = param.getValue()[0];
                 if(INNER_PARAM.contains(key)){
-                    requestParams.put(key, param.getValue()[0]);
+                    requestParams.put(key, value);
                 } else if(api.getFieldMap().containsKey(key)){
                     requestParams.put(param.getKey(),
                             api.getFieldMap().get(param.getKey()).getOperationType().needCollectionParam() ?
-                                    String.join("','", param.getValue()) : param.getValue()[0]
+                                    String.format("\"%s\"", String.join("\",\"", value.split(","))) : value
                     );
                 }
             }
         }
         if(requestParam!=null) {
             for (Map.Entry<String, String> param : requestParam.entrySet()) {
-                requestParams.put(param.getKey(), param.getValue());
+                if(api.getRequestField(param.getKey()) != null && api.getRequestField(param.getKey()).getOperationType().needCollectionParam()){
+                    requestParam.put(param.getKey(), String.join("\",\"", param.getValue().split(",")));
+                } else {
+                    requestParams.put(param.getKey(), param.getValue());
+                }
             }
         }
         // fill default value
@@ -189,31 +205,39 @@ public class DataService {
                 requestParams.put(field.getName(), field.getDefaultValue());
             }
         }
+        requestParams.put("login_user_id", String.valueOf(LoginUtil.getInstance().getLoginUserId()));
         return requestParams;
     }
 
     public Object handleTempledExecute(Interface api, Map<String, String> requestParams){
-        return sqlMapper.sqlSelectList(api.gets, requestParams)
+        return sqlMapper.sqlSelectList(api.getSqlTemplate(), requestParams);
     }
     public BaseResponse handleDbExecute(Interface api,  Map<String, String[]> queryParam, Map<String, String> requestParam){
         Map<String, String> requestParams = prepareParams(api, queryParam, requestParam);
 
         Object result = null;
-        switch (api.getType()){
-            case SELECT:
-                result = handleSelect(api, requestParams);
-                break;
-            case INSERT:
-                result = handleInsert(api, requestParams);
-                break;
-            case UPDATE:
-                result = handleUpdate(api, requestParams);
-                break;
-            case DELETE:
-                result = handleDelete(api, requestParams);
-                break;
-            default:
-                break;
+        if(StringUtils.isNotBlank(api.getSqlTemplate())){
+            result = handleTempledExecute(api, requestParams);
+        } else {
+            switch (api.getType()) {
+                case SELECT:
+                    result = handleSelect(api, requestParams);
+                    break;
+                case INSERT:
+                    result = handleInsert(api, requestParams);
+                    break;
+                case UPDATE:
+                    result = handleUpdate(api, requestParams);
+                    break;
+                case DELETE:
+                    result = handleDelete(api, requestParams);
+                    break;
+                default:
+                    break;
+            }
+        }
+        if(result == null){
+            return BaseResponse.builder().code(ErrorCode.API_SQL_LIMIT_NOT_ENOUGH).build();
         }
         return BaseResponse.builder().data(result).build();
     }
@@ -223,12 +247,15 @@ public class DataService {
     }
 
     public BaseResponse handleRequest(String path, Map<String, String[]> queryParam, Map<String, String> requestParam, RequestMethod method){
-        path = path.substring(REQUEST_PREFIX.length());
+        path = path.replaceAll("^/+", "/").substring(REQUEST_PREFIX.length());
         // validate request path
         if(!interfaceMap.containsKey(path)){
             BaseResponse.builder().code(ErrorCode.API_PATH_INVALID).build();
         }
         Interface api = interfaceMap.get(getPathMapKey(path, method));
+        if(api == null){
+            BaseResponse.builder().code(ErrorCode.API_PATH_INVALID).build();
+        }
         // validate request method
         if(!method.equals(api.getRequestMethod())){
             BaseResponse.builder().code(ErrorCode.API_METHOD_INVALID).build();

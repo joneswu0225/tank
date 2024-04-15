@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
 <mapper namespace="com.jones.tank.repository.UserMapper" >
-    <insert id="insertRecord" parameterType="User">
-        insert into user(`user_id`, `mobile`, `user_type`
+    <insert id="insert" parameterType="User">
+        insert into user(`mobile`, `user_type`
         , `create_time`, `update_time`
         <if test="password != null and password !=''">
         , `password`
@@ -14,7 +14,7 @@
             , `weprogram_session_key`
         </if>
         )
-        values(#{userId}, #{mobile}, #{userType}, now(), now()
+        values(#{mobile}, #{userType}, now(), now()
         <if test="password != null and password !=''">
         , #{password}
         </if>
@@ -27,7 +27,7 @@
         )
     </insert>
     <update id="update" parameterType="User">
-        update user set id=#{id}, verify_code=null
+        update user set user_id=#{userId}, verify_code=null
         <if test="userType != null and userType !=''">
             ,user_type = #{userType}
         </if>
@@ -55,7 +55,7 @@
         <if test="weprogramSessionKey != null and weprogramSessionKey !=''">
             ,weprogram_session_key = #{weprogramSessionKey}
         </if>
-        where id=#{id}
+        where user_id=#{userId}
     </update>
     <update id="updateByMobile" parameterType="java.util.Map">
         update user set mobile=#{mobile}, verify_code=null
@@ -72,8 +72,8 @@
     </update>
     <select id="findList" resultType="User" parameterType="Query">
         <include refid="com.jones.tank.repository.CommonMapper.startPage" />
-        select u.id, u.mobile,u.status,u.last_login_time,u.user_type, u.ip,u.openid, u.unionid from user u
-        where u.delete_flg=0
+        select u.user_id, u.mobile,u.status,u.last_login_time,u.user_type, u.ip,u.openid, u.unionid from user u
+        where u.deleted=0
         <if test="verifyCode != null and verifyCode !=''">
             and u.verify_code = #{verifyCode}
         </if>
@@ -83,15 +83,15 @@
         <if test="mobile != null and mobile !=''">
             and u.mobile = #{mobile}
         </if>
-        <if test="weprogramSessionKey != null and weprogramSessionKey !=''">
-            and u.weprogram_session_key = #{weprogramSessionKey}
+        <if test="openid != null and openid !=''">
+            and u.openid = #{openid}
         </if>
-        order by u.id desc
+        order by u.user_id desc
         <include refid="com.jones.tank.repository.CommonMapper.endPage" />
     </select>
-    <select id="findCount" resultType="java.lang.Integer" parameterType="Query">
+    <select id="findCount" resultType="java.lang.Long" parameterType="Query">
         select count(1) from `user` u
-        where delete_flg=0
+        where deleted=0
         <if test="verifyCode != null and verifyCode !=''">
             and u.verify_code = #{verifyCode}
         </if>
@@ -101,22 +101,22 @@
         <if test="mobile != null and mobile !=''">
             and u.mobile = #{mobile}
         </if>
-        <if test="weprogramSessionKey != null and weprogramSessionKey !=''">
-            and u.weprogram_session_key = #{weprogramSessionKey}
+        <if test="openid != null and openid !=''">
+            and u.openid = #{openid}
         </if>
     </select>
     <select id="findAll" resultType="User">
         select * from user
-        where delete_flg=0
-        order by id
+        where deleted=0
+        order by user_id
     </select>
     <select id="findOneByMobile" resultType="User">
         select * from user where mobile=#{mobile}
     </select>
     <select id="findById" resultType="User">
-        select * from user where id=#{id}
+        select * from user where user_id=#{userId}
     </select>
     <update id="delete">
-        update user set delete_flg=1 where id=#{id}
+        update user set deleted=1 where user_id=#{userId}
     </update>
 </mapper>

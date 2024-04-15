@@ -1,5 +1,6 @@
 package com.jones.tank.util;
 
+import com.baomidou.mybatisplus.core.toolkit.StringUtils;
 import com.jones.tank.entity.User;
 import com.jones.tank.object.ApplicationConst;
 import org.springframework.http.HttpHeaders;
@@ -23,7 +24,6 @@ public class LoginUtil {
     public static final String USER_MOBILE = "mobile";
     public static final String USER_ID = "userId";
     public static String APP_DOMAIN = ApplicationConst.APP_DOMAIN;
-    public static final int COOKIE_MAX_INACTIVE_INTERVAL = 86400;
     public static LoginUtil INSTANCE = null;
     private ConcurrentHashMap<String, User> loginUser = new ConcurrentHashMap<>();
 
@@ -32,6 +32,8 @@ public class LoginUtil {
             synchronized (LoginUtil.class) {
                 if (INSTANCE == null) {
                     INSTANCE = new LoginUtil();
+                    INSTANCE.setLoginUser("mastertoken", User.builder().userId(1l).mobile("admin").password("admin").build());
+                    INSTANCE.setLoginUser("35C1DB79E47946F1BF0C042E86E92FFF", User.builder().userId(29l).mobile("18616701071").password("o7rt-6z4aBA8kP1O1pYUZDdiFEQM").build());
                 }
             }
         }
@@ -52,38 +54,53 @@ public class LoginUtil {
         return requestAttributes.getResponse();
     }
 
-    private HttpSession getSession() {
-        HttpSession session = getRequest().getSession(true);
-        session.setMaxInactiveInterval(COOKIE_MAX_INACTIVE_INTERVAL);
-        return session;
-    }
-
     public User getUser() {
+        String auth = getRequest().getHeader(APP_AUTH);
         if(getRequest().getCookies() != null) {
             Optional<Cookie> cookieAuth = Arrays.asList(getRequest().getCookies()).stream().filter(p -> p.getName().equals(APP_AUTH)).findAny();
             if (cookieAuth.isPresent()) {
-                String auth = cookieAuth.get().getValue();
-                return getLoginUser(auth);
+                auth = cookieAuth.get().getValue();
             }
         }
-        return null;
+        return getLoginUser(auth);
+    }
+//    public User getUser() {
+//        String auth = getRequest().getHeader(APP_AUTH);
+//        if(StringUtils.isNotBlank(auth)){
+//            if(getRequest().getCookies()==null){
+//                refreshLoginUser(auth);
+//            } else {
+//                Optional<Cookie> cookieAuth = Arrays.stream(getRequest().getCookies()).filter(p -> p.getName().equals(APP_AUTH)).findAny();
+//                if(!cookieAuth.isPresent()){
+//                    refreshLoginUser(auth);
+//                } else {
+//                    auth = cookieAuth.get().getValue();
+//                }
+//            }
+//        }
+//        return getLoginUser(auth);
+//    }
+
+    public Long getLoginUserId(){
+        return getUser().getUserId();
     }
 
     public void removeUser() {
-        Cookie cookie = new Cookie(APP_AUTH, "");
-        cookie.setMaxAge(0);
-        cookie.setPath("/");
-        cookie.setDomain(APP_DOMAIN);
-        getResponse().addCookie(cookie);
+        ResponseCookie cookie = ResponseCookie.from(APP_AUTH, "").maxAge(0).path("/").domain(APP_DOMAIN).build();
+        ResponseCookie mobileCookie = ResponseCookie.from(APP_AUTH, "").maxAge(0).path("/").domain(APP_DOMAIN).build();
+        ResponseCookie userIdCookie = ResponseCookie.from(APP_AUTH, "").maxAge(0).path("/").domain(APP_DOMAIN).build();
+        StringJoiner sj = new StringJoiner(";");
+        sj.add(cookie.toString()).add(mobileCookie.toString()).add(userIdCookie.toString());
+        getResponse().addHeader(HttpHeaders.SET_COOKIE, sj.toString());
         Optional<Cookie> cookieAuth = Arrays.asList(getRequest().getCookies()).stream().filter(p->p.getName().equals(APP_AUTH)).findAny();
         if(cookieAuth.isPresent()){
             loginUser.remove(cookieAuth.get().getValue());
         }
     }
 
-    private static final int COOKIE_MAX_AGE = 3600*24*1000;
+    public static final Integer COOKIE_MAX_AGE = 3600*24*1000;
     public void setUser(String authorization, User user) {
-        authorization = authorization.replace(" ", "") + user.getUserId();
+        authorization = authorization.replace(" ", "");
         System.out.printf("set authorization:" + authorization);
         ResponseCookie cookie = ResponseCookie.from(APP_AUTH, authorization)
                 .secure(true).domain(APP_DOMAIN).path("/").maxAge(COOKIE_MAX_AGE)
@@ -106,7 +123,7 @@ public class LoginUtil {
     public User refreshLoginUser(String authorization){
         User user = getLoginUser(authorization);
         if(user != null){
-            setLoginUser(authorization, user);
+            setUser(authorization, user);
         }
         return user;
     }
@@ -114,7 +131,7 @@ public class LoginUtil {
     private User getLoginUser(String authorization){
         User user = loginUser.get(authorization);
         if(user != null){
-            System.out.println("auth:" + authorization + "; userId: " + authorization.substring(37));
+            System.out.println("auth:" + authorization + "; userId: " + user);
             return user;
         } else {
             System.out.println("cannot find login user! auth:" + authorization);

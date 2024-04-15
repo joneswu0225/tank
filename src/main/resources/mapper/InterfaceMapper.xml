@@ -18,7 +18,7 @@
         id, path, detail, entity_id, type, request_method, param_id, result_id
     </sql>
 
-    <insert id="insertRecord">
+    <insert id="insert">
         insert into interface(path, detail, entity_id, type, request_method, param_id, result_id)
         values(#{path},#{detail},#{entityId},#{type},#{requestMethod},#{paramId},#{resultId})
     </insert>

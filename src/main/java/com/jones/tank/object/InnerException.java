@@ -59,4 +59,9 @@ public class InnerException extends RuntimeException {
 		return this.code;
 	}
 
+	public InnerException(Throwable cause) {
+		this(ErrorCode.INTERNAL_ERROR, cause);
+	}
+
+
 }

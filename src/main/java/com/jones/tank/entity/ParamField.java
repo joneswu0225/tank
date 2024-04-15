@@ -98,7 +98,11 @@ public class ParamField implements Serializable {
 
 
     public String getWhereTemplate(){
-        return getAttribute().getSqlFieldName() + String.format(getOperationType().symbol, "#{" + getName() + "}");
+        if(this.getOperationType().needCollectionParam()){
+            return getAttribute().getSqlFieldName() + String.format(getOperationType().symbol, "${" + getName() + "}");
+        } else {
+            return getAttribute().getSqlFieldName() + String.format(getOperationType().symbol, "#{" + getName() + "}");
+        }
     }
 //
 //    public String getUpdatePart(String value){

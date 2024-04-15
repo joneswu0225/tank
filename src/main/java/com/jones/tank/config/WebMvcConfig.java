@@ -1,21 +1,17 @@
 package com.jones.tank.config;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurationSupport;
-import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
-
-import java.util.List;
 
 @Configuration
 public class WebMvcConfig extends WebMvcConfigurationSupport {
-//    @Autowired
-//    private InterfaceInterceptor interfaceInterceptor;
-//    @Qualifier("customRequestMappingHandlerMapping")
+    @Autowired
+    private TotalInterceptor totalInterceptor;
+    @Autowired
+    private AuthInterceptor authInterceptor;
 
     @Override
     protected CustomRequestMappingHandlerMapping createRequestMappingHandlerMapping() {
@@ -24,10 +20,17 @@ public class WebMvcConfig extends WebMvcConfigurationSupport {
         return customRequestMappingHandlerMapping;
     }
 
-//    @Override
-//    public void addInterceptors(InterceptorRegistry registry) {
-//        registry.addInterceptor(interfaceInterceptor); //.addPathPatterns("/interface/req");
-//    }
+    @Override
+    public void addInterceptors(InterceptorRegistry registry) {
+        registry.addInterceptor(totalInterceptor).addPathPatterns("/**");
+        registry.addInterceptor(authInterceptor).addPathPatterns("/**")
+                .excludePathPatterns("/error")
+                .excludePathPatterns("/user/login")
+                .excludePathPatterns("/user/wxlogin")
+                .excludePathPatterns("/user/regist")
+                .excludePathPatterns("/data/const")
+        ;
+    }
 
 
 

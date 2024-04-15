@@ -7,6 +7,8 @@ import java.util.regex.Pattern;
 
 public enum ValidateType {
 	STRING("", ""),
+	DATE("日期", "必须为YYYY-MM-DD格式"),
+	DATETIME("时间", "必须为YYYY-MM-DD HH:mm:ss格式"),
 	NUMBER("数字",""),
 	MOBILE("手机号",""),
 	EMAIL("邮箱",""),
@@ -31,6 +33,8 @@ public enum ValidateType {
 		VALIDATE_PATTERN.put(EMAIL, initPattern("^\\w+([-+.]\\w+)*@\\w+([-.]\\w+)*\\.\\w+([-.]\\w+)*$"));
 		VALIDATE_PATTERN.put(IDCARD, initPattern("^\\d{15}|\\d{18}$"));
 		VALIDATE_PATTERN.put(PASSWORD, initPattern("(?=.*[0-9])(?=.*[a-zA-Z])(?=.*[^a-zA-Z0-9]).{8,32}"));
+		VALIDATE_PATTERN.put(DATE, initPattern("^\\d{4}-\\d{2}-\\d{2}$"));
+		VALIDATE_PATTERN.put(DATETIME, initPattern("^d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}$"));
 	}
 
 	public boolean validate(String value){

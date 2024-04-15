@@ -156,33 +156,41 @@ public class Interface implements Serializable {
             TableInfo entityTable = tableInfoMap.get(entityTableName);
             String joinField = entityTable.getEntityId();
 
-            fromClause.append(String.format(" %s %s ", entityTable.getName(), entityTableName));
+            fromClause.append(String.format(" `%s` as `%s` ", entityTable.getName(), entityTableName));
             for (TableInfo table : entry.getValue()) {
                 if (table.equals(entityTable)) {
                     continue;
                 }
-                if (TableType.ENTITY.equals(table.getTableType())) {
-                    fromClause.append(String.format(" LEFT JOIN  %s %s on %s.`%s`=%s.`%s` ",
-                            table.getName(), table.getName(), table.getName(), joinField, entityTableName, joinField));
-                } else {
+                if (table.isAttrTable()) {
                     for (AttributeInfo attribute : tableFieldMap.get(table).stream().map(p->p.getAttribute()).distinct().collect(Collectors.toList())) {
                         fromClause.append(String.format(" LEFT JOIN  %s on %s.`%s`=%s.`%s` and %s.attr_id = %s",
                                 attribute.getFromPart(), attribute.getTableSymbol(), joinField, entityTableName, joinField, attribute.getTableSymbol(), attribute.getId()));
+                        if(table.isLogicDelete()){
+                            fromClause.append(" and %s.deleted=0".format(attribute.getTableSymbol()));
+                        }
                     }
-
+                } else {
+                    fromClause.append(String.format(" LEFT JOIN  %s %s on %s.`%s`=%s.`%s` ",
+                            table.getName(), table.getName(), table.getName(), joinField, entityTableName, joinField));
+                    if(table.isLogicDelete()){
+                        fromClause.append(" and %s.deleted=0".format(table.getName()));
+                    }
                 }
             }
         }
         this.fromClause = fromClause.toString();
     }
     public String getSelectTemplate(Map<String, String> requestParam){
+        List<String> whereClause = requestParam.keySet().stream().filter(p->getFieldMap().containsKey(p)).map(p-> getFieldMap().get(p).getWhereTemplate()).collect(Collectors.toList());
+        List<String> deletedInfo = entityTableMap.values().stream().filter(p->p.size() > 0 && p.getFirst().isEntityTable()).map(p->String.format("`%s`.deleted=0", p.getFirst().getName())).collect(Collectors.toList());
+        whereClause.addAll(deletedInfo);
         StringBuilder query = new StringBuilder("SELECT ")
                 .append(String.join(",", getResult().getFields().stream().map(p->p.getSelectPart()).collect(Collectors.toList())))
                 .append(" FROM ").append(fromClause)
                 .append(" WHERE ")
-                .append(String.join(" and ", requestParam.keySet().stream().filter(p->getFieldMap().containsKey(p)).map(p-> getFieldMap().get(p).getWhereTemplate()).collect(Collectors.toList())));
+                .append(String.join(" and ", whereClause));
         if(orderId != null){
-            query.append(String.join(",", getOrder().getFields().stream().map(p->p.getOrderPart()).collect(Collectors.toList())));
+            query.append(" ORDER BY ").append(String.join(",", getOrder().getFields().stream().map(p->p.getOrderPart()).collect(Collectors.toList())));
         }
         return query.toString();
     }
@@ -219,30 +227,25 @@ public class Interface implements Serializable {
         }
 
     }
-
     public String getUpdateTemplate(TableInfo table, Map<String, String> requestParam){
         if(table.isAttrTable()) {
-            StringJoiner whereJoiner = new StringJoiner(" and ");
-            for (ParamField field : query.getFields()) {
-                if (requestParam.containsKey(field.getName()) && (field.isInTable(table) || field.getName().equals(table.getEntityId()))) {
-                    whereJoiner.add(String.format("`%s`=#{%s}", field.getAttribute().getName(), field.getName()));
-                }
+            String entityId = requestParam.get(table.getEntityId());
+            if(StringUtils.isEmpty(entityId)){
+                return null;
             }
-            String where = whereJoiner.toString();
+            String insertPart = String.format("(`%s`, `attr_id`, `attr_name`, `value`)", table.getEntityId());
             StringJoiner updateSql = new StringJoiner("; ");
             for (ParamField field : param.getFields()) {
                 if (requestParam.containsKey(field.getName()) && field.isInTable(table)) {
+                    String valuesPart = String.format("(%s, %s, '%s', #{%s})", entityId, field.getAttributeId(), field.getAttribute().getName(), field.getName());
                     String setPart = new StringJoiner(",")
-                            .add(String.format(" `value`=#{%s}", field.getName())).toString();
-                    StringJoiner wherePart = new StringJoiner(" and ")
-                            .add(" `attr_id`=" + field.getAttributeId());
-                    if(!where.isEmpty()){
-                        wherePart.add(where);
-                    }
+                            .add(String.format(" `attr_name`='%s'", field.getAttribute().getName()))
+                            .add(String.format(" `value`=#{%s}", field.getName()))
+                            .toString();
                     updateSql.add(
-                            new StringBuilder("UPDATE ").append(table.getName())
-                                    .append(" SET ").append(setPart)
-                                    .append(" WHERE ").append(wherePart).toString()
+                            new StringBuilder("INSERT INTO ").append(table.getName()).append(insertPart)
+                                    .append(" VALUES ").append(valuesPart)
+                                    .append(" ON DUPLICATE KEY UPDATE ").append(setPart)
                     );
                 }
             }
@@ -263,11 +266,68 @@ public class Interface implements Serializable {
                     whereFields.add(String.format("`%s`=#{%s}", field.getAttribute().getName(), field.getName()));
                 }
             }
+            if(whereFields.size() == 0){
+                return null;
+            }
             return new StringBuilder("UPDATE ").append(table.getName())
                     .append(" SET ").append(String.join(",", setFields))
                     .append(" WHERE ").append(String.join(" and ", whereFields)).toString();
         }
     }
+//    public String getUpdateTemplate(TableInfo table, Map<String, String> requestParam){
+//        if(table.isAttrTable()) {
+//            StringJoiner whereJoiner = new StringJoiner(" and ");
+//            for (ParamField field : query.getFields()) {
+//                if (requestParam.containsKey(field.getName()) && (field.isInTable(table) || field.getName().equals(table.getEntityId()))) {
+//                    whereJoiner.add(String.format("`%s`=#{%s}", field.getAttribute().getName(), field.getName()));
+//                }
+//            }
+//            String where = whereJoiner.toString();
+//            if(where.isEmpty()){
+//                return null;
+//            }
+//            StringJoiner updateSql = new StringJoiner("; ");
+//            for (ParamField field : param.getFields()) {
+//                if (requestParam.containsKey(field.getName()) && field.isInTable(table)) {
+//                    String setPart = new StringJoiner(",")
+//                            .add(String.format(" `value`=#{%s}", field.getName())).toString();
+//                    StringJoiner wherePart = new StringJoiner(" and ")
+//                            .add(" `attr_id`=" + field.getAttributeId());
+//                    if(!where.isEmpty()){
+//                        wherePart.add(where);
+//                    }
+//                    updateSql.add(
+//                            new StringBuilder("UPDATE ").append(table.getName())
+//                                    .append(" SET ").append(setPart)
+//                                    .append(" WHERE ").append(wherePart).toString()
+//                    );
+//                }
+//            }
+//            return updateSql.toString();
+//        } else {
+//            List<String> setFields = new ArrayList<>();
+//            for (ParamField field : param.getFields()) {
+//                if (requestParam.containsKey(field.getName()) && field.isInTable(table)) {
+//                    setFields.add(String.format("`%s`=#{%s}", field.getAttribute().getName(), field.getName()));
+//                }
+//            }
+//            if(setFields.isEmpty()) {
+//                return null;
+//            }
+//            List<String> whereFields = new ArrayList<>();
+//            for (ParamField field : query.getFields()) {
+//                if (requestParam.containsKey(field.getName()) && field.isInTable(table)) {
+//                    whereFields.add(String.format("`%s`=#{%s}", field.getAttribute().getName(), field.getName()));
+//                }
+//            }
+//            if(whereFields.size() == 0){
+//                return null;
+//            }
+//            return new StringBuilder("UPDATE ").append(table.getName())
+//                    .append(" SET ").append(String.join(",", setFields))
+//                    .append(" WHERE ").append(String.join(" and ", whereFields)).toString();
+//        }
+//    }
 
     public String getDeleteteTemplate(TableInfo table, Map<String, String> requestParam){
         List<String> whereFields = new ArrayList<>();
@@ -275,6 +335,9 @@ public class Interface implements Serializable {
             if(requestParam.containsKey(field.getName()) && field.isInTable(table)){
                 whereFields.add(String.format("`%s`=#{%s}", field.getAttribute().getName(), field.getName()));
             }
+        }
+        if(whereFields.size() == 0){
+            return null;
         }
         if(table.isLogicDelete()){
             return new StringBuilder("UPDATE ").append(table.getName())
@@ -284,7 +347,6 @@ public class Interface implements Serializable {
             return new StringBuilder("DELETE FROM ").append(table.getName())
                 .append(" WHERE ").append(String.join(" and ", whereFields)).toString();
         }
-
     }
 
 

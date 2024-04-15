@@ -43,15 +43,4 @@ public class InterfaceController extends BaseController<InterfaceService>{
         return BaseResponse.builder().build();
     }
 
-    @RequestMapping(value="/a/{id}", method={RequestMethod.GET, RequestMethod.OPTIONS, RequestMethod.POST})
-    public BaseResponse fileDownLoad2(@PathVariable String id, HttpServletRequest request) throws Exception{
-//        if(request.getMethod().equals(RequestMethod.GET.name())){
-//            return fileDownLoad1(id);
-//        }
-        System.out.println(id);
-        return BaseResponse.builder().data(id).build();
-    }
-
-
-
 }

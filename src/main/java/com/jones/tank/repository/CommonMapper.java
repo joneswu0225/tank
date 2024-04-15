@@ -9,7 +9,7 @@ public interface CommonMapper<T> {
     List<T> findList(Query paramQuery);
 
     default T findOne(Query paramQuery){
-        List<T> dataList = this.findAll(paramQuery);
+        List<T> dataList = this.findList(paramQuery);
         return dataList.size()>0 ? dataList.get(0) : null;
     }
 

@@ -21,10 +21,11 @@ import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import static com.jones.tank.util.WechatWeProgramUtil.getSessionKey;
 
@@ -169,13 +170,13 @@ public class UserService extends CustomServiceImpl<UserMapper, User> {
         return login(user, appSource);
     }
     public BaseResponse login(User user, String appSource){
-        LocalDateTime now = LocalDateTime.now();
+        Date now = new Date();
 //        User user_db = users.get(0);
         user.setLastLoginTime(now);
         User user_update = User.builder().userId(user.getUserId()).lastLoginTime(now).build();
         mapper.update(user_update);
         Map<String, Object> result = new HashMap<>();
-        String authorization = "Basic" + UuidUtil.generate().toUpperCase();
+        String authorization = UuidUtil.generate().toUpperCase();
         result.put("id", user.getUserId());
         // 返回用户基本信息
         // 从enterprise_user表中查询所有的企业
@@ -186,35 +187,70 @@ public class UserService extends CustomServiceImpl<UserMapper, User> {
             log.info("当前用户%s,　为普通用户无权限登录后台管理");
             return BaseResponse.builder().code(ErrorCode.ADMIN_LOGIN_DENIED).build();
         }
-        result.put("expireTime", new Date(now.toInstant(ZoneOffset.UTC).toEpochMilli() + LoginUtil.COOKIE_MAX_INACTIVE_INTERVAL));
+//        result.put("expireTime", new Date(now.toInstant(ZoneOffset.UTC).toEpochMilli() + LoginUtil.COOKIE_MAX_INACTIVE_INTERVAL));
+        result.put("expireTime", new Date().getTime() + LoginUtil.COOKIE_MAX_AGE);
         result.put("userType", user.getUserType());
         result.put("authorization", authorization);
         LoginUtil.getInstance().setUser(authorization, user);
         return BaseResponse.builder().data(result).build();
     }
+    private final static Object syncLock = new Object(); // 相当于线程锁,用于线程安全
+    private ConcurrentHashMap<String, Map<String, Object>> weprogramSessionInfo = null;
+    private static Long WEPROGRAM_SESSION_INFO_EXPIRES = 5*60*1000l;
+
 
     public BaseResponse doWxLogin(UserWXLoginParam param){
         User user = null;
-        if(param.getEncryptedData() == null) {
+        if(!StringUtils.hasLength(param.getEncryptedData())) {
             JSONObject result = WechatWeProgramUtil.getSessionKey(param.getCode());
+            if(!result.containsKey("openid")){
+                return BaseResponse.builder().code(ErrorCode.INTERNAL_ERROR).data(result).build();
+            }
             user = mapper.findOne(UserQuery.builder().openid(result.getString("openid")).build());
             if(user==null){
-                return BaseResponse.builder().code(ErrorCode.WECHAT_CODE_NOTEXISTS).build();
+                result.put("timestamp", new Date().getTime());
+                getWeprogramSessionInfo().put(param.getCode(), result);
+                return BaseResponse.builder().code(ErrorCode.WECHAT_OPENID_NOTEXISTS).build();
             }
+            user.setPassword(result.getString("openid"));
         } else {
-            Map<String, String> wechatInfo = WechatWeProgramUtil.getUserInfo(param.getCode(),param.getEncryptedData(), param.getIv());
+            Map<String, String> wechatInfo = WechatWeProgramUtil.getUserInfo(getWeprogramSessionInfo().get(param.getCode()),param.getEncryptedData(), param.getIv());
             if(wechatInfo == null) {
                 return BaseResponse.builder().code(ErrorCode.WECHAT_LOGIN_VERIFY_FAIL).build();
             }
             user = mapper.findOneByMobile(wechatInfo.get("mobile"));
             if(user == null){
-                add(User.builder().mobile(wechatInfo.get("mobile")).userType(User.COMMON).openid(wechatInfo.get("openid")).unionid(wechatInfo.get("unionid")).build());
+                user = User.builder().mobile(wechatInfo.get("mobile")).userType(User.COMMON).password(wechatInfo.get("openid")).openid(wechatInfo.get("openid")).unionid(wechatInfo.get("unionid")).build();
+                add(user);
             } else if (StringUtils.hasLength(user.getOpenid()) || StringUtils.hasLength(user.getUnionid())) {
-                mapper.update(User.builder().userId(user.getUserId()).openid(wechatInfo.get("openid")).unionid(wechatInfo.get("unionid")).build());
+                mapper.update(User.builder().userId(user.getUserId()).password(wechatInfo.get("openid")).openid(wechatInfo.get("openid")).unionid(wechatInfo.get("unionid")).build());
             }
         }
-        return doLogin(UserLoginParam.builder().mobile(user.getMobile()).password(user.getPassword()).build(), ApplicationConst.APP_SOURCE_WEIXIN);
+        return login(user, ApplicationConst.APP_SOURCE_WEIXIN);
     }
+
+    private Map<String, Map<String, Object>> getWeprogramSessionInfo(){
+        if(weprogramSessionInfo == null){
+            synchronized (syncLock){
+                if(weprogramSessionInfo == null){
+                    weprogramSessionInfo = new ConcurrentHashMap<>();
+                    ScheduledExecutorService monitorExecutor = Executors.newScheduledThreadPool(1);
+                    monitorExecutor.scheduleAtFixedRate(new TimerTask() {
+                        @Override
+                        public void run() {
+                            for(Map.Entry<String, Map<String, Object>> entry: weprogramSessionInfo.entrySet()){
+                                if(new Date().getTime() - Long.parseLong(entry.getValue().get("timestamp").toString()) > WEPROGRAM_SESSION_INFO_EXPIRES){
+                                    weprogramSessionInfo.remove(entry.getKey());
+                                }
+                            }
+                        }
+                    }, WEPROGRAM_SESSION_INFO_EXPIRES, WEPROGRAM_SESSION_INFO_EXPIRES, TimeUnit.MILLISECONDS);
+                }
+            }
+        }
+        return weprogramSessionInfo;
+    }
+
 
 }
 

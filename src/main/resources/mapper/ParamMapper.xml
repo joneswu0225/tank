@@ -30,7 +30,7 @@
         id, name, detail, type
     </sql>
 
-    <insert id="insertRecord">
+    <insert id="insert">
         insert into message(name, detail, type)
         values(#{name},#{detail},#{type})
     </insert>

@@ -4,15 +4,16 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
-import java.io.Serializable;
-import java.time.LocalDateTime;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
+
+import java.io.Serializable;
+import java.util.Date;
 
 /**
  * <p>
@@ -25,6 +26,8 @@ import lombok.experimental.Accessors;
 
 @Data
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @Accessors(chain = true)
 @TableName("user")
 @ApiModel(value = "User对象", description = "")
@@ -50,13 +53,13 @@ public class User implements Serializable {
 
     @ApiModelProperty("最后登录时间")
     @TableField("last_login_time")
-    private LocalDateTime lastLoginTime;
+    private Date lastLoginTime;
 
     @TableField("create_time")
-    private LocalDateTime createTime;
+    private Date createTime;
 
     @TableField("update_time")
-    private LocalDateTime updateTime;
+    private Date updateTime;
 
     @ApiModelProperty("用户类型，0：普通注册用户，1：企业管理员，2：系统管理员")
     @TableField("user_type")
@@ -73,9 +76,6 @@ public class User implements Serializable {
     @ApiModelProperty("唯一识别码")
     @TableField("unique_code")
     private String uniqueCode;
-
-    @TableField("delete_flg")
-    private Boolean deleteFlg;
 
     @TableField("openid")
     private String openid;

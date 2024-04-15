@@ -25,7 +25,7 @@
         id, name, entity_type, detail, table_id, table_name, content_type, tag_flg
     </sql>
 
-    <insert id="insertRecord">
+    <insert id="insert">
         insert into attribute_info(name, detail, entity_id, type, request_method, param_id, result_id)
         values(#{name},#{detail},#{entityId},#{type},#{requestMethod},#{paramId},#{resultId})
     </insert>

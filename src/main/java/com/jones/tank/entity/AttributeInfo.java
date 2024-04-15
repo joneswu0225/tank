@@ -73,7 +73,7 @@ public class AttributeInfo implements Serializable {
             tableSymbol = String.format("%s_%d", getTableInfo().getName(), getId());
             attributeName = "value";
         }
-        return String.format("%s.`%s`", tableSymbol, attributeName);
+        return String.format("`%s`.`%s`", tableSymbol, attributeName);
     }
 
 
@@ -82,11 +82,11 @@ public class AttributeInfo implements Serializable {
     }
 
     public String getSelectPart() {
-        return String.format("%s as %s", getSqlFieldName(), name);
+        return String.format("%s as `%s`", getSqlFieldName(), name);
     }
 
     public String getFromPart(){
-        return String.format("%s %s", getTableInfo().getName(), getTableSymbol());
+        return String.format("`%s` as `%s`", getTableInfo().getName(), getTableSymbol());
     }
 
 }
