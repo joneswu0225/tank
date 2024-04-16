@@ -1,10 +1,9 @@
 package com.jones.tank.service;
 
 import com.jones.tank.entity.FileUpload;
-import com.jones.tank.object.BaseResponse;
-import com.jones.tank.object.CustomServiceImpl;
-import com.jones.tank.object.ErrorCode;
+import com.jones.tank.object.*;
 import com.jones.tank.repository.FileUploadMapper;
+import com.jones.tank.util.LoginUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -43,25 +42,25 @@ public class FileUploadService extends CustomServiceImpl<FileUploadMapper, FileU
     @Autowired
     private FileUploadMapper mapper;
 
-    public BaseResponse uploadFile(MultipartFile file, String fileName) {
+    public BaseResponse uploadFile(MultipartFile file, String fileName, FileType fileType, String relatedId){
         try {
-            String now = LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME).substring(0, 10).replace('T', ' ');
-            String timestamp = String.valueOf(System.currentTimeMillis());
-            fileName = StringUtils.isEmpty(fileName) ? timestamp : fileName;
+            fileName = StringUtils.isEmpty(fileName) ? file.getOriginalFilename() : fileName;
             int fileSurfixIndex = fileName.lastIndexOf(".");
             int originFileSurfixIndex = file.getOriginalFilename().lastIndexOf(".");
             fileName = fileSurfixIndex > 0 ? fileName.substring(0, fileSurfixIndex) : fileName;
-//            fileName = fileName + "_" + now;
             String fileSurfix = originFileSurfixIndex > 0 ? file.getOriginalFilename().substring(originFileSurfixIndex + 1) : (fileSurfixIndex > 1 ? fileName.substring(fileSurfixIndex + 1) : null);
             fileName = StringUtils.isEmpty(fileSurfix) ? fileName : (fileName + "." + fileSurfix);
-            Path path = Paths.get(fileUploadPath, fileName);
+            String relPath = fileType.getFilePath(relatedId, fileName);
+            Path path = Paths.get(ApplicationConst.UPLOAD_PATH, relPath);
             path.toFile().mkdirs();
             Files.copy(file.getInputStream(), path, StandardCopyOption.REPLACE_EXISTING);
-            FileUpload fileUpload = FileUpload.builder().path(fileName).name(fileName).create_time(now).build();
-
+            FileUpload fileUpload = FileUpload.builder().type(fileType).path(relPath).name(fileName).domain(ApplicationConst.APP_DOMAIN).relatedId(relatedId).build();
+            if(LoginUtil.getInstance().getUser() != null){
+                fileUpload.setUserId(LoginUtil.getInstance().getLoginUserId());
+            }
             mapper.insert(fileUpload);
             Map<String, String> result = new HashMap<>();
-            result.put("path", fileName);
+            result.put("path", relPath);
             return BaseResponse.builder().data(result).build();
         } catch (Exception e) {
             log.error("文件上传失败", e);

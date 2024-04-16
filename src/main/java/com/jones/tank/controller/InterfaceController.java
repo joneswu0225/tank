@@ -24,7 +24,7 @@ import java.util.Map;
  */
 @RestController
 @RequestMapping("/interface")
-@Api(value = "系統常量", tags = {"系統常量"})
+@Api(value = "接口管理", tags = {"接口管理"})
 public class InterfaceController extends BaseController<InterfaceService>{
     @Autowired
     private InterfaceService service;

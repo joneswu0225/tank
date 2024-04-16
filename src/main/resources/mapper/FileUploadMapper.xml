@@ -2,23 +2,32 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
 <mapper namespace="com.jones.tank.repository.FileUploadMapper" >
     <insert id="insert" parameterType="FileUpload" useGeneratedKeys="true" keyProperty="id">
-        insert into file_upload(`name`, `path`,`type`, `create_time`)
-        values(#{name}, #{path}, #{type}, #{create_time})
+        insert into file_upload( `name`, `path`, `related_id`,`type`,`user_id`,`domain`, `create_time`, `update_time`)
+        values( #{name}, #{path}, #{relatedId}, #{type},#{userId},#{domain}, now(), now())
     </insert>
-    <insert id="update" parameterType="FileUpload">
-        update file_upload set name = #{name},path = #{path},type = #{type}, update_time=now()  where id=#{id}
-    </insert>
+    <update id="update" parameterType="FileUpload">
+        update file_upload set name = #{name},path = #{path},related_id = #{relatedId},type = #{type}, update_time=now()  where id=#{id}
+    </update>
     <select id="findList" resultType="FileUpload" parameterType="Query">
         select * from file_upload
         order by id desc
     </select>
+    <select id="findList" resultType="FileUpload" parameterType="Query">
+        <include refid="com.jones.tank.repository.CommonMapper.startPage" />
+        select * from file_upload
+        where 1=1
+        <if test="relatedId != null">
+            and related_id = #{relatedId}
+        </if>
+        order by id desc
+        <include refid="com.jones.tank.repository.CommonMapper.endPage" />
+    </select>
     <select id="findCount" resultType="java.lang.Long" parameterType="Query">
         select count(*) from file_upload
         where 1=1
-    </select>
-    <select id="findAllName" resultType="java.lang.Object" parameterType="Query">
-        select id, name from file_upload
-        order by name
+        <if test="relatedId != null">
+            and related_id = #{relatedId}
+        </if>
     </select>
     <select id="findAll" resultType="FileUpload">
         select * from file_upload order by name

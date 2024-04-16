@@ -6,7 +6,7 @@ import org.springframework.context.annotation.Configuration;
 import java.util.Arrays;
 import java.util.List;
 
-//@Configuration
+@Configuration
 public class ApplicationConst {
     public static final int PLATEFROM = 1;
     public static final int NOPLATEFROM = 0;
@@ -20,11 +20,18 @@ public class ApplicationConst {
     public static final String APP_MODE_PRODUCT = "PRODUCT";
 
     public static String APP_DOMAIN;
+    public static String UPLOAD_PATH;
     public static String DEPLOY_ID;
     @Value("${app.domain:vr2shipping.com}")
     public void setAppDomain(String appDomain) {
         APP_DOMAIN = appDomain;
     }
+
+    @Value("${app.file.path.upload:./pano}")
+    public void setUploadPath(String uploadPath) {
+        UPLOAD_PATH = uploadPath;
+    }
+
 
 
 }

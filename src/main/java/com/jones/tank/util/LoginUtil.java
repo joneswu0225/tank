@@ -82,6 +82,10 @@ public class LoginUtil {
 //    }
 
     public Long getLoginUserId(){
+        User user = getUser();
+        if(user == null){
+            return null;
+        }
         return getUser().getUserId();
     }
 
@@ -129,6 +133,10 @@ public class LoginUtil {
     }
 
     private User getLoginUser(String authorization){
+        if(StringUtils.isEmpty(authorization)){
+            System.out.println("cannot find login user! auth:" + authorization);
+            return null;
+        }
         User user = loginUser.get(authorization);
         if(user != null){
             System.out.println("auth:" + authorization + "; userId: " + user);

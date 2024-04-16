@@ -210,8 +210,26 @@ public class DataService {
     }
 
     public Object handleTempledExecute(Interface api, Map<String, String> requestParams){
-        return sqlMapper.sqlSelectList(api.getSqlTemplate(), requestParams);
+        Object result = null;
+        switch (api.getType()) {
+            case SELECT:
+                result = sqlMapper.sqlSelectList(api.getSqlTemplate(), requestParams);;
+                break;
+            case INSERT:
+                result = sqlMapper.sqlInsert(api.getSqlTemplate(), requestParams);;
+                break;
+            case UPDATE:
+                result = sqlMapper.sqlUpdate(api.getSqlTemplate(), requestParams);
+                break;
+            case DELETE:
+                result = sqlMapper.sqlDelete(api.getSqlTemplate(), requestParams);
+                break;
+            default:
+                break;
+        }
+        return result;
     }
+
     public BaseResponse handleDbExecute(Interface api,  Map<String, String[]> queryParam, Map<String, String> requestParam){
         Map<String, String> requestParams = prepareParams(api, queryParam, requestParam);
 

@@ -105,4 +105,8 @@ public class TableInfo implements Serializable {
         return this.key1;
     }
 
+    public boolean containsKey(String key){
+        return key.equals(key1) || key.equals(key2) || key.equals(key3);
+    }
+
 }

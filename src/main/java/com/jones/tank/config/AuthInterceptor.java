@@ -56,19 +56,22 @@ public class AuthInterceptor extends HandlerInterceptorAdapter {
                 }
             }
         }
-        log.info("authorization in request header is :" + request.getHeader("authorization"));
         User loginUser = LoginUtil.getInstance().getUser();
-        if(loginUser == null && request.getHeader("authorization") != null){
+        if(loginUser == null){
             String authorization = request.getHeader("authorization");
-            loginUser = LoginUtil.getInstance().refreshLoginUser(authorization);
+            log.info("authorization in request header is :" + authorization);
+            if(StringUtils.isNotBlank(authorization))
+                loginUser = LoginUtil.getInstance().refreshLoginUser(authorization);
             if(loginUser == null){
                 log.info("request address: " + request.getRemoteAddr());
                 String referer = request.getHeader("referer");
-                if("mastertoken".equals(authorization) || appMode.equals(ApplicationConst.APP_MODE_DEBUG) && StringUtils.isNotBlank(referer) && (referer.contains("swagger-ui.html") || referer.contains("notebook"))){
+                if(appMode.equals(ApplicationConst.APP_MODE_DEBUG) && StringUtils.isNotBlank(referer) && (referer.contains("swagger-ui.html"))){
                     log.info("当前请求为内部接口请求，且无登录状态，设置默认用户为：admin");
-                    UserLoginParam user = UserLoginParam.builder().mobile("admin").password("admin").build();
-                    loginUser = User.builder().mobile("admin").build();
-                    request.setAttribute("authorization", ((Map<String, String>)userService.doLogin(user, appSource == null ? ApplicationConst.APP_SOURCE_ADMIN : appSource).getData()).get("authorization"));
+                    authorization = "mastertoken";
+                    loginUser = LoginUtil.getInstance().refreshLoginUser(authorization);
+//                    UserLoginParam user = UserLoginParam.builder().mobile("admin").password("admin").build();
+//                    loginUser = User.builder().mobile("admin").build();
+//                    request.setAttribute("authorization", ((Map<String, String>)userService.doLogin(user, appSource == null ? ApplicationConst.APP_SOURCE_ADMIN : appSource).getData()).get("authorization"));
                 } else {
                     log.info("当前用户未登陆");
                     response.sendError(HttpStatus.UNAUTHORIZED.value(), "请登录后进行操作");

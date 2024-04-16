@@ -99,7 +99,6 @@ public class Interface implements Serializable {
     public void generateJoinInfo(Map<String, TableInfo> tableInfoMap){
         // -----join part--------
         // first version only support one entity
-        List<TableInfo> relTable = new ArrayList<>();
 //        Set<TableInfo> tableInfos = new HashSet<>();
         Map<TableInfo, Set<ParamField>> tableFieldMap = new HashMap<>();
         if(queryId != null) {
@@ -130,9 +129,9 @@ public class Interface implements Serializable {
         }
         this.tableFieldMap = tableFieldMap;
         for(TableInfo table : tableInfos){
-            if(TableType.REL.equals(table.getTableType())){
-                relTable.add(table);
-            }
+//            if(TableType.REL.equals(table.getTableType())){
+//                relTable.add(table);
+//            }
             if(!StringUtils.isEmpty(table.getEntityType())){
                 entityTableMap.putIfAbsent(table.getEntityType(), new LinkedList<>());
                 if(TableType.ENTITY.equals(table.getTableType())){
