@@ -26,7 +26,7 @@ import java.util.Map;
  */
 @Component
 @Slf4j
-@Profile({"wechat"})
+//@Profile({"wechat"})
 public class WechatApiUtil {
     public static String appId;
     private static String appSecret;
@@ -38,10 +38,12 @@ public class WechatApiUtil {
     public static String URL_GET_MEDIA = WECHAT_API_URL_BASE + "/cgi-bin/media/get?access_token=%s&media_id=%s";
     private static String fileUploadPath = "";
 
+
     @PostConstruct
     public void init(){
         URL_GET_ACCESS_TOKEN = String.format(URL_GET_ACCESS_TOKEN, appId, appSecret);
         generateAccessToken();
+        generateJsTicket();
     }
 
     public String getAccessToken(){
@@ -79,6 +81,7 @@ public class WechatApiUtil {
     }
 
 //    @Scheduled(cron = "* * 0/1 * * ?")
+    @Scheduled(fixedRate = 3600000)
     private void generateAccessToken() {
         try {
             JSONObject resp = HttpClientUtil.getJson(URL_GET_ACCESS_TOKEN);
@@ -89,7 +92,8 @@ public class WechatApiUtil {
         }
     }
 
-    @Scheduled(cron = "0 0/2 * * * ?")
+//    @Scheduled(cron = "* * 0/2  * * ?")
+    @Scheduled(fixedRate = 7000000)
     private void generateJsTicket(){
         try {
             JSONObject resp = HttpClientUtil.getJson(String.format(URL_GET_JS_TICKET, this.accessToken));

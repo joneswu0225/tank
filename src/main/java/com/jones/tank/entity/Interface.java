@@ -7,6 +7,8 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import java.io.Serializable;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import com.baomidou.mybatisplus.core.toolkit.StringUtils;
@@ -348,6 +350,34 @@ public class Interface implements Serializable {
         }
     }
 
+    public String getSqlFormatTemplate(Map<String, String> requestParams){
+        Pattern pat = Pattern.compile("and\\s*[\\w\\.]+?\\s*[=(in)]+\\s*\\(?\\s*[#\\$]\\{(.*?)\\}\\s*\\)?");
+        Matcher matcher = pat.matcher(sqlTemplate);
+        String sql = sqlTemplate;
+        while(matcher.find()){
+            if(!requestParams.containsKey(matcher.group(1))){
+                sql = sql.replace(matcher.group(), "");
+            }
+        }
+        return sql;
+    }
 
+
+//    public static void main(String[] args) {
+//        Map<String, String> requestParams = new HashMap<>();
+//        requestParams.put("ccc","123");
+//        String sql = "select * from enterprise where enterprise_id=(select value from attribute_value_user where attr_id=108 and a.user_id=#{login_user_id} and bb=#{ccc}) and range in (${range_in})";
+//
+//        Pattern pat = Pattern.compile("and\\s*[\\w\\.]+?\\s*[=(in)]+\\s*\\(?\\s*[#\\$]\\{(.*?)\\}\\s*\\)?");
+//        Matcher matcher = pat.matcher(sql);
+//        Map<String, String> matcherMap = new HashMap<>();
+//        while(matcher.find()){
+//            if(!requestParams.containsKey(matcher.group(1))){
+//                sql = sql.replace(matcher.group(), "");
+//            }
+//        }
+//
+//        System.out.println(sql);
+//    }
 
 }

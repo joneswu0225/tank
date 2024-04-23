@@ -1,11 +1,8 @@
 package com.jones.tank.controller;
 
 
-import com.jones.tank.entity.query.Query;
 import com.jones.tank.object.BaseResponse;
 import com.jones.tank.service.DataService;
-import com.jones.tank.service.InterfaceService;
-import io.swagger.annotations.Api;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -25,10 +22,10 @@ import java.util.Map;
  * @since 2024-03-12
  */
 @RestController
-@RequestMapping("/data")
+@RequestMapping("/open")
 //@Api(value = "代理接口", tags = {"代理接口"})
-public class DataController {
-    public static final String REQUEST_PREFIX = "/data";
+public class OpenController {
+    public static final String REQUEST_PREFIX = "/open";
 
     @Autowired
     private DataService service;
@@ -40,21 +37,6 @@ public class DataController {
     @RequestMapping(value="get", method={RequestMethod.GET})
     public BaseResponse get(HttpServletRequest request, HttpServletResponse response) throws Exception{
         return service.get(getUrl(request), request.getParameterMap());
-    }
-
-    @RequestMapping(value="post", method={RequestMethod.POST})
-    public BaseResponse post(@RequestBody Map<String, String> params, HttpServletRequest request, HttpServletResponse response) throws Exception{
-        return service.post(getUrl(request), request.getParameterMap(), params);
-    }
-
-    @RequestMapping(value="put", method={RequestMethod.PUT})
-    public BaseResponse put(@RequestBody Map<String, String> params, HttpServletRequest request, HttpServletResponse response) throws Exception{
-        return service.put(getUrl(request), request.getParameterMap(), params);
-    }
-
-    @RequestMapping(value="delete", method={RequestMethod.DELETE})
-    public BaseResponse delete(HttpServletRequest request, HttpServletResponse response) throws Exception{
-        return service.delete(getUrl(request), request.getParameterMap());
     }
 
 }

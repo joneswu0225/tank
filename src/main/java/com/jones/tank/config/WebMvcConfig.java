@@ -29,6 +29,7 @@ public class WebMvcConfig extends WebMvcConfigurationSupport {
                 .excludePathPatterns("/user/wxlogin")
                 .excludePathPatterns("/user/regist")
                 .excludePathPatterns("/data/const")
+                .excludePathPatterns("/open/**")
         ;
     }
 

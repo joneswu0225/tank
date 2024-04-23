@@ -9,7 +9,6 @@ import com.jones.tank.object.dataapi.DbType;
 import com.jones.tank.repository.*;
 import com.jones.tank.util.LoginUtil;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RequestMethod;
 
@@ -29,7 +28,6 @@ import java.util.stream.Collectors;
 @Service
 public class DataService {
 
-    public static final String REQUEST_PREFIX = "/data";
     @Autowired
     private InterfaceMapper interfaceMapper;
 
@@ -213,16 +211,16 @@ public class DataService {
         Object result = null;
         switch (api.getType()) {
             case SELECT:
-                result = sqlMapper.sqlSelectList(api.getSqlTemplate(), requestParams);;
+                result = sqlMapper.sqlSelectList(api.getSqlFormatTemplate(requestParams), requestParams);;
                 break;
             case INSERT:
-                result = sqlMapper.sqlInsert(api.getSqlTemplate(), requestParams);;
+                result = sqlMapper.sqlInsert(api.getSqlFormatTemplate(requestParams), requestParams);;
                 break;
             case UPDATE:
-                result = sqlMapper.sqlUpdate(api.getSqlTemplate(), requestParams);
+                result = sqlMapper.sqlUpdate(api.getSqlFormatTemplate(requestParams), requestParams);
                 break;
             case DELETE:
-                result = sqlMapper.sqlDelete(api.getSqlTemplate(), requestParams);
+                result = sqlMapper.sqlDelete(api.getSqlFormatTemplate(requestParams), requestParams);
                 break;
             default:
                 break;
@@ -265,7 +263,6 @@ public class DataService {
     }
 
     public BaseResponse handleRequest(String path, Map<String, String[]> queryParam, Map<String, String> requestParam, RequestMethod method){
-        path = path.replaceAll("^/+", "/").substring(REQUEST_PREFIX.length());
         // validate request path
         if(!interfaceMap.containsKey(path)){
             BaseResponse.builder().code(ErrorCode.API_PATH_INVALID).build();

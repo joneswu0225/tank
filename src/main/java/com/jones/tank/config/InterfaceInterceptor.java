@@ -1,5 +1,6 @@
 package com.jones.tank.config;
 
+import com.jones.tank.controller.DataController;
 import com.jones.tank.service.DataService;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.context.request.WebRequestInterceptor;
@@ -18,7 +19,7 @@ public class InterfaceInterceptor extends HandlerInterceptorAdapter {
 
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
         String uri = request.getRequestURI();
-        if(!uri.startsWith(DataService.REQUEST_PREFIX)){
+        if(!uri.startsWith(DataController.REQUEST_PREFIX)){
             return true;
         }
         request.setAttribute("a", "bb");
