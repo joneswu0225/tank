@@ -87,7 +87,7 @@ public class DataService {
         }
         // validate required param
         for (String requiredFiled : param.getRequiredFields()) {
-            if (!requestParam.containsKey(requiredFiled)) {
+            if (!requestParam.containsKey(requiredFiled) || StringUtils.isEmpty((String) requestParam.get(requiredFiled)) ) {
                 return BaseResponse.builder().code(ErrorCode.API_PARAM_INVALID).message(String.format("必填字段 %s 不能为空", requiredFiled)).build();
             }
         }
@@ -101,7 +101,10 @@ public class DataService {
             if(requestParam.get(key) instanceof String[]){
                 value = String.join(",", (String[])requestParam.get(key));
             }  else {
-                value = requestParam.get(key).toString();
+                value = (String) requestParam.get(key);
+            }
+            if(value == null){
+                continue;
             }
             if(field.getValidateType() != null && !field.getValidateType().validate(value)){
                 return BaseResponse.builder().code(ErrorCode.API_PARAM_INVALID).message("字段 \"" + field.getName() + "\" " + field.getValidateType().getDescription()).build();
@@ -263,22 +266,18 @@ public class DataService {
     }
 
     public BaseResponse handleRequest(String path, Map<String, String[]> queryParam, Map<String, String> requestParam, RequestMethod method){
-        // validate request path
-        if(!interfaceMap.containsKey(path)){
-            BaseResponse.builder().code(ErrorCode.API_PATH_INVALID).build();
-        }
         Interface api = interfaceMap.get(getPathMapKey(path, method));
         if(api == null){
-            BaseResponse.builder().code(ErrorCode.API_PATH_INVALID).build();
+            return BaseResponse.builder().code(ErrorCode.API_PATH_INVALID).build();
         }
         // validate request method
         if(!method.equals(api.getRequestMethod())){
-            BaseResponse.builder().code(ErrorCode.API_METHOD_INVALID).build();
+            return BaseResponse.builder().code(ErrorCode.API_METHOD_INVALID).build();
         }
         // validate entity count
-        if(!method.equals(api.getRequestMethod())){
-            BaseResponse.builder().code(ErrorCode.API_METHOD_INVALID).build();
-        }
+//        if(!method.equals(api.getRequestMethod())){
+//            BaseResponse.builder().code(ErrorCode.API_METHOD_INVALID).build();
+//        }
         // upsert接口的实体个数不能超过一个
         if(DbType.INSERT.equals(api.getType()) && (api.getEntityTableMap().keySet().size() > 1)){
             return BaseResponse.builder().code(ErrorCode.API_UPSERT_DUPLICATE_ENTITY).build();
