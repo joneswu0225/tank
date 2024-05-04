@@ -291,7 +291,7 @@ public class SqlMapper{
         }
 
         private void newSelectMappedStatement(String msId, SqlSource sqlSource, final Class<?> resultType) {
-            MappedStatement ms = (new MappedStatement.Builder(this.configuration, msId, sqlSource, SqlCommandType.SELECT)).resultMaps(new ArrayList<ResultMap>() {
+            MappedStatement ms = (new MappedStatement.Builder(this.configuration, msId, sqlSource, SqlCommandType.SELECT)).flushCacheRequired(true).resultMaps(new ArrayList<ResultMap>() {
                 {
                     this.add((new org.apache.ibatis.mapping.ResultMap.Builder(com.jones.tank.repository.SqlMapper.MSUtils.this.configuration, "defaultResultMap", resultType, new ArrayList(0))).build());
                 }
@@ -300,7 +300,7 @@ public class SqlMapper{
         }
 
         private void newUpdateMappedStatement(String msId, SqlSource sqlSource, SqlCommandType sqlCommandType) {
-            MappedStatement ms = (new MappedStatement.Builder(this.configuration, msId, sqlSource, sqlCommandType)).resultMaps(new ArrayList<ResultMap>() {
+            MappedStatement ms = (new MappedStatement.Builder(this.configuration, msId, sqlSource, sqlCommandType)).flushCacheRequired(true).resultMaps(new ArrayList<ResultMap>() {
                 {
                     this.add((new org.apache.ibatis.mapping.ResultMap.Builder(com.jones.tank.repository.SqlMapper.MSUtils.this.configuration, "defaultResultMap", Integer.TYPE, new ArrayList(0))).build());
                 }

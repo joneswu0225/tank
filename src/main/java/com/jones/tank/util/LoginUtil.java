@@ -34,6 +34,7 @@ public class LoginUtil {
                     INSTANCE = new LoginUtil();
                     INSTANCE.setLoginUser("mastertoken", User.builder().userId(1l).mobile("admin").password("admin").build());
                     INSTANCE.setLoginUser("35C1DB79E47946F1BF0C042E86E92FFF", User.builder().userId(29l).mobile("18616701071").password("o7rt-6z4aBA8kP1O1pYUZDdiFEQM").build());
+                    INSTANCE.setLoginUser("35C1DB79E47946F1BF0C042E86E92FF1", User.builder().userId(30l).mobile("13564332436").password("o7rt-6zyvJZrN8uay5jrTvwEwXRw").build());
                 }
             }
         }
@@ -56,12 +57,12 @@ public class LoginUtil {
 
     public User getUser() {
         String auth = getRequest().getHeader(APP_AUTH);
-        if(getRequest().getCookies() != null) {
-            Optional<Cookie> cookieAuth = Arrays.asList(getRequest().getCookies()).stream().filter(p -> p.getName().equals(APP_AUTH)).findAny();
-            if (cookieAuth.isPresent()) {
-                auth = cookieAuth.get().getValue();
-            }
-        }
+//        if(getRequest().getCookies() != null) {
+//            Optional<Cookie> cookieAuth = Arrays.asList(getRequest().getCookies()).stream().filter(p -> p.getName().equals(APP_AUTH)).findAny();
+//            if (cookieAuth.isPresent()) {
+//                auth = cookieAuth.get().getValue();
+//            }
+//        }
         return getLoginUser(auth);
     }
 //    public User getUser() {

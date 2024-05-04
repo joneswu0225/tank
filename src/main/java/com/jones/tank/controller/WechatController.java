@@ -9,6 +9,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Profile;
 import org.springframework.web.bind.annotation.*;
 
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
+
 @RestController
 @RequestMapping({"/wechat"})
 //@Profile({"wechat"})
@@ -40,7 +43,7 @@ public class WechatController {
      */
     @ApiOperation(value = "获取jsSDKSign", notes = "获取jsSDKSign")
     @GetMapping(value="/sign")
-    public BaseResponse getJsSdkSign(@RequestParam(name="url", required = false) String url){
+    public BaseResponse getJsSdkSign(@NotBlank(message = "url不能为空") @RequestParam(name="url", required = true) String url){
         return BaseResponse.builder().data(wechatApiUtil.getJsSdkSign(url)).build();
     }
     /**
