@@ -13,12 +13,11 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.PostConstruct;
 import java.io.File;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
+import java.io.IOException;
+import java.nio.file.*;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -42,22 +41,30 @@ public class FileUploadService extends CustomServiceImpl<FileUploadMapper, FileU
     @Autowired
     private FileUploadMapper mapper;
 
+    private FileUpload generateFileUpload(String fileName, String fileOriginName, FileType fileType, String relatedId){
+        fileName = StringUtils.isEmpty(fileName) ? fileOriginName : fileName;
+        int fileSurfixIndex = fileName.lastIndexOf(".");
+        int originFileSurfixIndex = fileOriginName == null ? -1 : fileOriginName.lastIndexOf(".") ;
+        String namePart = fileSurfixIndex > 0 ? fileName.substring(0, fileSurfixIndex) : fileName;
+        String fileSurfix = originFileSurfixIndex > 0 ? fileOriginName.substring(originFileSurfixIndex + 1) : (fileSurfixIndex > 1 ? fileName.substring(fileSurfixIndex + 1) : null);
+        fileName = StringUtils.isEmpty(fileSurfix) ? namePart : (namePart + "." + fileSurfix);
+
+        String relPath = fileType.getFilePath(relatedId, fileName);
+
+        FileUpload fileUpload = FileUpload.builder().type(fileType).path(relPath).name(fileName).domain(ApplicationConst.APP_DOMAIN).relatedId(relatedId).build();
+        if(LoginUtil.getInstance().getUser() != null){
+            fileUpload.setUserId(LoginUtil.getInstance().getLoginUserId());
+        }
+        return fileUpload;
+
+    }
     public BaseResponse uploadFile(MultipartFile file, String fileName, FileType fileType, String relatedId){
         try {
-            fileName = StringUtils.isEmpty(fileName) ? file.getOriginalFilename() : fileName;
-            int fileSurfixIndex = fileName.lastIndexOf(".");
-            int originFileSurfixIndex = file.getOriginalFilename().lastIndexOf(".");
-            fileName = fileSurfixIndex > 0 ? fileName.substring(0, fileSurfixIndex) : fileName;
-            String fileSurfix = originFileSurfixIndex > 0 ? file.getOriginalFilename().substring(originFileSurfixIndex + 1) : (fileSurfixIndex > 1 ? fileName.substring(fileSurfixIndex + 1) : null);
-            fileName = StringUtils.isEmpty(fileSurfix) ? fileName : (fileName + "." + fileSurfix);
-            String relPath = fileType.getFilePath(relatedId, fileName);
+            FileUpload fileUpload = generateFileUpload(fileName, file.getOriginalFilename(), fileType, relatedId);
+            String relPath = fileUpload.getPath();
             Path path = Paths.get(ApplicationConst.UPLOAD_PATH, relPath);
             path.toFile().mkdirs();
             Files.copy(file.getInputStream(), path, StandardCopyOption.REPLACE_EXISTING);
-            FileUpload fileUpload = FileUpload.builder().type(fileType).path(relPath).name(fileName).domain(ApplicationConst.APP_DOMAIN).relatedId(relatedId).build();
-            if(LoginUtil.getInstance().getUser() != null){
-                fileUpload.setUserId(LoginUtil.getInstance().getLoginUserId());
-            }
             mapper.insert(fileUpload);
             Map<String, String> result = new HashMap<>();
             result.put("path", relPath);
@@ -68,7 +75,25 @@ public class FileUploadService extends CustomServiceImpl<FileUploadMapper, FileU
         }
     }
 
-    public String getFileUploadPath(){
+    public BaseResponse uploadFile(String base64, String fileName, FileType fileType, String relatedId){
+        FileUpload fileUpload = generateFileUpload(fileName, null, fileType, relatedId);
+        String relPath = fileUpload.getPath();
+        Path path = Paths.get(ApplicationConst.UPLOAD_PATH, relPath);
+        new File(path.toFile().getParent()).mkdirs();
+        int contentIndex = base64.indexOf(",");
+        base64 = contentIndex > 0 ? base64.substring(contentIndex+1) : base64;
+        try {
+            Files.write(path, Base64.getDecoder().decode(base64), StandardOpenOption.CREATE);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        mapper.insert(fileUpload);
+        Map<String, String> result = new HashMap<>();
+        result.put("path", relPath);
+        return BaseResponse.builder().data(result).build();
+    }
+
+        public String getFileUploadPath(){
         return fileUploadPath;
     }
 

@@ -1,5 +1,7 @@
 package com.jones.tank.controller;
 
+import com.jones.tank.entity.param.FileUploadParam;
+import com.jones.tank.entity.param.UserRegistParam;
 import com.jones.tank.entity.query.Query;
 import com.jones.tank.object.BaseResponse;
 import com.jones.tank.object.FileType;
@@ -10,6 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.tomcat.util.http.fileupload.IOUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -32,9 +35,17 @@ public class FileController{
     public BaseResponse fileUpload(
             @NotNull(message = "上传文件不能为空") @RequestParam(name="file") @ApiParam(value="上传文件",name="file") MultipartFile file,
             @RequestParam(name="fileName", required = false) @ApiParam(value="文件名称",name="fileName") String fileName,
-            @RequestParam(name="relatedId", required = false) @ApiParam(value="关联内容的id， 如上传名片为userId, 上传企业logo为enterpirseId",name="relatedId") String relatedId,
+            @RequestParam(name="relatedId", required = false) @ApiParam(value="关联内容的id， 如上传名片为user_id, 上传企业avatar为enterpirse_id",name="relatedId") String relatedId,
             @RequestParam(name="fileType") @ApiParam(value="文件类型",name="fileType") FileType fileType) throws Exception{
         BaseResponse resp = service.uploadFile(file, fileName, fileType, relatedId);
+        return resp;
+    }
+
+
+    @PostMapping(value="/uploadBase64")
+    public BaseResponse fileUpload(
+            @Validated @RequestBody @ApiParam(required=true) FileUploadParam param) throws Exception{
+        BaseResponse resp = service.uploadFile(param.getFileBase64(), param.getFileName(), param.getFileType(), param.getRelatedId());
         return resp;
     }
 
