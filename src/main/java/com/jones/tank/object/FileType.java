@@ -5,8 +5,10 @@ import java.io.File;
 public enum FileType {
     USER_NAMECARD("用户名片"),
     USER_AVATAR("用户头像"),
-    ENTERPRIISE_IMAGE("企业图标"),
-    ENTERPRISE_LOGO("企业LOGO")
+    USER_GALLERY("用户相册"),
+    ENTERPRIISE_NAMECARD("企业名片"),
+    ENTERPRIISE_AVATAR("企业头像"),
+    ENTERPRIISE_GALLERY("企业相册")
     ;
 
     public final String description;
@@ -15,7 +17,6 @@ public enum FileType {
         this.description = description;
     }
 
-    public static final String FILE_PATH_PREFIX = "static/";
     public String getFilePath(String relatedId, String fileName){
         String name = this.name() + "_" + relatedId + "_" + System.currentTimeMillis() + "_" + fileName;
         String relPath = "";
@@ -26,14 +27,22 @@ public enum FileType {
             case USER_AVATAR:
                 relPath = "user" + File.separator + "avatar" + File.separator + name;
                 break;
-            case ENTERPRIISE_IMAGE:
-            case ENTERPRISE_LOGO:
-                relPath = "enterprise" + File.separator + relatedId + File.separator + "image" + File.separator + name;
+            case USER_GALLERY:
+                relPath = "user" + File.separator + "gallery" + File.separator + name;
+                break;
+            case ENTERPRIISE_NAMECARD:
+                relPath = "enterprise" + File.separator + "namecard" + File.separator + name;
+                break;
+            case ENTERPRIISE_AVATAR:
+                relPath = "enterprise" + File.separator + "avatar" + File.separator + name;
+                break;
+            case ENTERPRIISE_GALLERY:
+                relPath = "enterprise" + File.separator + "gallery" + File.separator + name;
                 break;
             default:
                 relPath = "";
         }
-        return FILE_PATH_PREFIX + relPath;
+        return ApplicationConst.FILE_PATH_PREFIX + relPath;
     }
 }
 

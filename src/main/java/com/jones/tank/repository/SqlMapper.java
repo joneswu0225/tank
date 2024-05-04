@@ -296,6 +296,7 @@ public class SqlMapper{
                     this.add((new org.apache.ibatis.mapping.ResultMap.Builder(com.jones.tank.repository.SqlMapper.MSUtils.this.configuration, "defaultResultMap", resultType, new ArrayList(0))).build());
                 }
             }).build();
+
             this.configuration.addMappedStatement(ms);
         }
 

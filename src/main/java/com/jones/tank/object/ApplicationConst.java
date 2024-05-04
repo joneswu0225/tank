@@ -22,9 +22,15 @@ public class ApplicationConst {
     public static String APP_DOMAIN;
     public static String UPLOAD_PATH;
     public static String DEPLOY_ID;
+    public static String FILE_PATH_PREFIX;
+
     @Value("${app.domain:vr2shipping.com}")
     public void setAppDomain(String appDomain) {
         APP_DOMAIN = appDomain;
+    }
+    @Value("${app.file.path.prefix:}")
+    public void setFilePathPrefix(String filePathPrefix) {
+        FILE_PATH_PREFIX = filePathPrefix;
     }
 
     @Value("${app.file.path.upload:./pano}")
