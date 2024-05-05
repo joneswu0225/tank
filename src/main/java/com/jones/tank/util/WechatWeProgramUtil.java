@@ -35,7 +35,7 @@ public class WechatWeProgramUtil {
     public static JSONObject getSessionKey(String code) {
         try {
             JSONObject resp = HttpClientUtil.getJson(URL_CODE_TO_SESSION + code);
-            log.info("wechat code to session key resp: " + resp.toJSONString());
+            log.info("wechat code {} to session key resp: {}", code, resp.toJSONString());
             return resp;
         } catch (Exception e) {
             log.error("fail to get wechat session key", e);

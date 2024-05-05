@@ -136,7 +136,7 @@ public class Interface implements Serializable {
 //            }
             if(!StringUtils.isEmpty(table.getEntityType())){
                 entityTableMap.putIfAbsent(table.getEntityType(), new LinkedList<>());
-                if(TableType.ENTITY.equals(table.getTableType())){
+                if(table.isEntityTable()){
                     entityTableMap.get(table.getEntityType()).offerFirst(table);
                 } else {
                     entityTableMap.get(table.getEntityType()).offerLast(table);

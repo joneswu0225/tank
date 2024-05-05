@@ -82,6 +82,9 @@ public class TableInfo implements Serializable {
     public boolean isEntityTable(){
         return TableType.ENTITY.equals(this.tableType);
     }
+    public boolean isRelTable(){
+        return TableType.REL.equals(this.tableType);
+    }
 
     public boolean isLogicDelete(){
         return logicDelete > 0;
@@ -107,6 +110,10 @@ public class TableInfo implements Serializable {
 
     public boolean containsKey(String key){
         return key.equals(key1) || key.equals(key2) || key.equals(key3);
+    }
+
+    public String getEntityType(){
+        return isRelTable() ? this.name : this.entityType;
     }
 
 }

@@ -18,6 +18,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
+import springfox.documentation.spring.web.json.Json;
 
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -191,6 +192,7 @@ public class UserService extends CustomServiceImpl<UserMapper, User> {
         result.put("expireTime", new Date().getTime() + LoginUtil.COOKIE_MAX_AGE);
         result.put("userType", user.getUserType());
         result.put("authorization", authorization);
+        log.info("finish login user:{}, mobile:{}, authorization:{}", user.getUserId(), user.getMobile(), authorization);
         LoginUtil.getInstance().setUser(authorization, user);
         return BaseResponse.builder().data(result).build();
     }
@@ -209,12 +211,21 @@ public class UserService extends CustomServiceImpl<UserMapper, User> {
             user = mapper.findOne(UserQuery.builder().openid(result.getString("openid")).build());
             if(user==null){
                 result.put("timestamp", new Date().getTime());
+                log.info("set session_info, code:{}, info:{}", param.getCode(), result);
                 getWeprogramSessionInfo().put(param.getCode(), result);
                 return BaseResponse.builder().code(ErrorCode.WECHAT_OPENID_NOTEXISTS).build();
             }
             user.setPassword(result.getString("openid"));
         } else {
-            Map<String, String> wechatInfo = WechatWeProgramUtil.getUserInfo(getWeprogramSessionInfo().get(param.getCode()),param.getEncryptedData(), param.getIv());
+            log.info("get session_info, code:{}, info:{}", param.getCode(), getWeprogramSessionInfo().get(param.getCode()));
+            Map<String, Object> result = getWeprogramSessionInfo().get(param.getCode());
+            if(result == null){
+                result = WechatWeProgramUtil.getSessionKey(param.getCode());
+            }
+            if(result == null){
+
+            }
+            Map<String, String> wechatInfo = WechatWeProgramUtil.getUserInfo(result,param.getEncryptedData(), param.getIv());
             if(wechatInfo == null) {
                 return BaseResponse.builder().code(ErrorCode.WECHAT_LOGIN_VERIFY_FAIL).build();
             }
@@ -222,6 +233,8 @@ public class UserService extends CustomServiceImpl<UserMapper, User> {
             if(user == null){
                 user = User.builder().mobile(wechatInfo.get("mobile")).userType(User.COMMON).password(wechatInfo.get("openid")).openid(wechatInfo.get("openid")).unionid(wechatInfo.get("unionid")).build();
                 add(user);
+                log.info("finish add new user, mobile:{}, user_id:{}", user.getUserId(), user.getMobile());
+                user = mapper.findOneByMobile(wechatInfo.get("mobile"));
             } else if (StringUtils.hasLength(user.getOpenid()) || StringUtils.hasLength(user.getUnionid())) {
                 mapper.update(User.builder().userId(user.getUserId()).password(wechatInfo.get("openid")).openid(wechatInfo.get("openid")).unionid(wechatInfo.get("unionid")).build());
             }

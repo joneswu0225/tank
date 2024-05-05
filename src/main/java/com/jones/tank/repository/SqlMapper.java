@@ -44,7 +44,9 @@ public class SqlMapper{
     @PostConstruct
     private void init() {
         this.sqlSession = sqlSessionFactory.openSession(true);
-        this.msUtils = new SqlMapper.MSUtils(sqlSession.getConfiguration());
+        Configuration conf = this.sqlSession.getConfiguration();
+        conf.setCacheEnabled(false);
+        this.msUtils = new SqlMapper.MSUtils(conf);
     }
 
     private <T> T getOne(List<T> list) {
@@ -155,7 +157,13 @@ public class SqlMapper{
             RowBounds rowBounds = new RowBounds(pageNumber*pageSize-pageSize, pageSize);
             return this.sqlSession.selectList(msId, params, rowBounds);
         }
-        return this.sqlSession.selectList(msId, params);
+        try {
+            return this.sqlSession.selectList(msId, params);
+        } catch (Exception e) {
+            this.sqlSession.clearCache();
+            e.printStackTrace();
+        }
+        return new ArrayList<>();
     }
 
     /**
@@ -241,7 +249,13 @@ public class SqlMapper{
     public int sqlUpdate(String sql, Object value) {
         Class<?> parameterType = value != null ? value.getClass() : null;
         String msId = this.msUtils.updateDynamic(sql, parameterType);
-        return this.sqlSession.update(msId, value);
+        try {
+            return this.sqlSession.update(msId, value);
+        } catch (Exception e) {
+            this.sqlSession.clearCache();
+            e.printStackTrace();
+        }
+        return -1;
     }
 
     /**
