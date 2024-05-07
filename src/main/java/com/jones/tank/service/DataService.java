@@ -87,7 +87,7 @@ public class DataService {
         }
         // validate required param
         for (String requiredFiled : param.getRequiredFields()) {
-            if (!requestParam.containsKey(requiredFiled) || StringUtils.isEmpty((String) requestParam.get(requiredFiled)) ) {
+            if (!requestParam.containsKey(requiredFiled)) {
                 return BaseResponse.builder().code(ErrorCode.API_PARAM_INVALID).message(String.format("必填字段 %s 不能为空", requiredFiled)).build();
             }
         }

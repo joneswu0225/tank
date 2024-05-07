@@ -7,10 +7,7 @@ import org.apache.ibatis.mapping.ResultMap;
 import org.apache.ibatis.mapping.SqlCommandType;
 import org.apache.ibatis.mapping.SqlSource;
 import org.apache.ibatis.scripting.LanguageDriver;
-import org.apache.ibatis.session.Configuration;
-import org.apache.ibatis.session.RowBounds;
-import org.apache.ibatis.session.SqlSession;
-import org.apache.ibatis.session.SqlSessionFactory;
+import org.apache.ibatis.session.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -43,7 +40,11 @@ public class SqlMapper{
     /**这个注解具体意思可以自己去了解一下**/
     @PostConstruct
     private void init() {
-        this.sqlSession = sqlSessionFactory.openSession(true);
+
+        SqlSessionManager sqlSessionManager = SqlSessionManager.newInstance(sqlSessionFactory);
+//                this.sqlSession = sqlSessionFactory.openSession(true);
+//        this.sqlSession = sqlSessionManager.openSession(true);
+        this.sqlSession = sqlSessionManager;
         Configuration conf = this.sqlSession.getConfiguration();
         conf.setCacheEnabled(false);
         this.msUtils = new SqlMapper.MSUtils(conf);
