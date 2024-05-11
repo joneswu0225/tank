@@ -1,6 +1,7 @@
 package com.jones.tank.util;
 
 import com.alibaba.fastjson.JSONObject;
+import com.jones.tank.entity.param.WeprogramMsgCheckParam;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Profile;
@@ -34,16 +35,19 @@ public class WechatApiUtil {
     private String jsTicket;
     public static final String WECHAT_API_URL_BASE = "https://api.weixin.qq.com";
     public static String URL_GET_ACCESS_TOKEN = WECHAT_API_URL_BASE + "/cgi-bin/token?grant_type=client_credential&appid=%s&secret=%s";
+//    public static String URL_GET_ACCESS_TOKEN = WECHAT_API_URL_BASE + "/cgi-bin/stable_token?grant_type=client_credential&appid=%s&secret=%s";
     public static String URL_GET_JS_TICKET = WECHAT_API_URL_BASE + "/cgi-bin/ticket/getticket?type=jsapi&access_token=%s";
     public static String URL_GET_MEDIA = WECHAT_API_URL_BASE + "/cgi-bin/media/get?access_token=%s&media_id=%s";
+    public static String URL_MSG_SEC_CHECK = WECHAT_API_URL_BASE + "/wxa/msg_sec_check?access_token=%s";
     private static String fileUploadPath = "";
 
 
     @PostConstruct
-    public void init(){
+    public String init(){
         URL_GET_ACCESS_TOKEN = String.format(URL_GET_ACCESS_TOKEN, appId, appSecret);
-        generateAccessToken();
+        String accessToken = generateAccessToken();
         generateJsTicket();
+        return accessToken;
     }
 
     public String getAccessToken(){
@@ -61,6 +65,29 @@ public class WechatApiUtil {
         Map<String, Object> result = Sign.sign(jsTicket, url);
         result.put("appid", appId);
         result.put("access_token", getAccessToken());
+        return result;
+    }
+
+    public static Map<String, Object> checkMsgSec(String openid, String content, String accessToken){
+        if(StringUtils.isEmpty(accessToken)){
+            accessToken = WechatApiUtil.accessToken;
+        }
+        log.info("start to get check message, openid:{}, access_token:{}, content:{}", openid, accessToken, content);
+        Map<String, Object> result = null;
+        try{
+            JSONObject param = new JSONObject();
+            param.put("scene", 1);
+            param.put("version", 2);
+            param.put("content", content);
+            param.put("openid", openid);
+            Map<String, String> header = new HashMap<>();
+            header.put("Content-Type", "application/json");
+            Map<String, Object> resp = HttpUtil.doPost2(String.format(URL_MSG_SEC_CHECK, accessToken), header, param.toJSONString());
+            log.info("finish get check message, param:{}, resp", param.toJSONString(), result);
+            result = JSONObject.parseObject(String.valueOf(resp.getOrDefault("body", "{}")));
+        }catch (Exception e){
+            log.error("fail to download wechat files", e);
+        }
         return result;
     }
 
@@ -82,7 +109,7 @@ public class WechatApiUtil {
 
 //    @Scheduled(cron = "* * 0/1 * * ?")
     @Scheduled(fixedRate = 3600000)
-    private void generateAccessToken() {
+    public String generateAccessToken() {
         try {
             JSONObject resp = HttpClientUtil.getJson(URL_GET_ACCESS_TOKEN);
             log.info("wechat access token resp: " + resp.toJSONString());
@@ -90,6 +117,7 @@ public class WechatApiUtil {
         } catch (Exception e){
             log.error("fail to get wechat access token", e);
         }
+        return WechatApiUtil.accessToken;
     }
 
 //    @Scheduled(cron = "* * 0/2  * * ?")
@@ -114,9 +142,11 @@ public class WechatApiUtil {
     }
 
     public static void main(String[] args) throws UnsupportedEncodingException {
-        String aa = "https://msa.vr2shipping.com/my/p_ditor/0/248/2";
-        System.out.println(URLDecoder.decode(aa, "UTF-8"));
-//        String toolPath = "/usr/local/ffmpeg/bin/ffmpeg";
+        String url = "https://api.weixin.qq.com/wxa/msg_sec_check?access_token=80_peF0NTqWruZvrw3x1IBpope42LbadD4yqc-Sj9X-xtHTI63XRqyUh_5jfYYfB7pFo4q62caHZtAAb9Ou-dl_QIN_JAxDBdExbPtgaxCBu6Q6mBsadOCHKpn4wl4NONcAJAIJI";
+
+//        System.out.println(URLDecoder.decode(aa, "UTF-8"));
+//        String toolPath = "/usr/local/ffm
+//        peg/bin/ffmpeg";
 //        String sourcePath = "/home/test4.amr";
 //        String targetPath = "/home/test4.wav";
 //        changeToWav(sourcePath, targetPath);

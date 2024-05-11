@@ -210,7 +210,7 @@ public class Interface implements Serializable {
                     values.add(String.format("(%s)",sj.toString()));
                 }
             }
-            return new StringBuilder("INSERT INTO ").append(table.getName()).append("(")
+            return new StringBuilder("INSERT ignore INTO ").append(table.getName()).append("(")
                     .append(fields).append(") VALUES ")
                     .append(String.join(",", values)).append("; select last_insert_id()").toString();
         } else {
@@ -222,7 +222,7 @@ public class Interface implements Serializable {
                     values.add(String.format("#{%s}", field.getName()));
                 }
             }
-            return new StringBuilder("INSERT INTO ").append(table.getName()).append("(")
+            return new StringBuilder("INSERT ignore INTO ").append(table.getName()).append("(")
                     .append(String.join(",", fields)).append(") VALUES (")
                     .append(String.join(",", values)).append("); select last_insert_id()").toString();
         }

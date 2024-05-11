@@ -2,6 +2,7 @@ package com.jones.tank.util;
 
 
 import com.alibaba.fastjson.JSONObject;
+import com.jones.tank.entity.param.WeprogramMsgCheckParam;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.*;
 import org.apache.http.client.HttpRequestRetryHandler;
@@ -20,7 +21,9 @@ import org.apache.http.conn.socket.ConnectionSocketFactory;
 import org.apache.http.conn.socket.LayeredConnectionSocketFactory;
 import org.apache.http.conn.socket.PlainConnectionSocketFactory;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+import org.apache.http.entity.SerializableEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.message.BasicNameValuePair;
@@ -32,6 +35,7 @@ import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLHandshakeException;
 import java.io.IOException;
 import java.io.InterruptedIOException;
+import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.net.UnknownHostException;
 import java.util.*;
@@ -174,11 +178,11 @@ public class HttpClientUtil {
      * @param httpPost
      * @param params
      */
-    private static void setPostParams(HttpPost httpPost, Map<String, String> params){
+    private static void setPostParams(HttpPost httpPost, Map<String, Object> params){
         List<NameValuePair> nvps = new ArrayList<NameValuePair>();
         Set<String> keys = params.keySet();
         for (String key: keys){
-            nvps.add(new BasicNameValuePair(key, params.get(key)));
+            nvps.add(new BasicNameValuePair(key, String.valueOf(params.get(key))));
         }
         try {
             httpPost.setEntity(new UrlEncodedFormEntity(nvps, "utf-8"));
@@ -187,10 +191,25 @@ public class HttpClientUtil {
         }
     }
 
-    public static String post(String url, Map<String, String> params) throws Exception {
+    public static String post(String url, Map<String, Object> params) throws Exception {
         HttpPost httpPost = new HttpPost(url);
         setPostParams(httpPost, params);
         return getRequestResult(httpPost);
+    }
+
+    public static JSONObject postJson(String url, Map<String, Object> params) throws Exception {
+        String result = post(url, params);
+        return JSONObject.parseObject(result);
+
+    }
+
+    public static JSONObject postJson(String url, Serializable object) throws Exception {
+        HttpPost httpPost = new HttpPost(url);
+        httpPost.setHeader("Content-Type", "application/json");
+        httpPost.setEntity(new SerializableEntity(object));
+        String result = getRequestResult(httpPost);
+        return JSONObject.parseObject(result);
+
     }
 
     public static String get(String url) throws Exception {
@@ -240,4 +259,29 @@ public class HttpClientUtil {
             e.printStackTrace();
         }
     }
+
+    public static void main(String[] args) throws IOException {
+        String token = "8FhLKERD1e0D79Y1J8hxWE_32CY2pmJGi3l_CSYOcNEtT_VMk6fEyL7i7tRCcRz3Nz-67r4bWoEfxlqIwbbL22RS77o0QBRpml2mf3TeFdkAMDzJiiFdwcj13yO8QZOgAEAMVK";
+        String url = "https://api.weixin.qq.com/wxa/msg_sec_check?access_token=";
+        url = url+token;
+        JSONObject param = new JSONObject();
+        param.put("scene", 1);
+        param.put("version", 2);
+        param.put("content", "Hello");
+        param.put("openid", "o7rt-65CCbcXh3ZA0b7-PHkpJycg");
+        Map<String, String> header = new HashMap<>();
+        header.put("Content-Type", "application/json");
+        Map<String, Object> result = HttpUtil.doPost2(url, header, param.toJSONString());
+        System.out.println(result.getOrDefault("body", ""));
+//
+//        WeprogramMsgCheckParam param = WeprogramMsgCheckParam.builder().scene(1).version(2).content("Hello").openid("o7rt-65CCbcXh3ZA0b7-PHkpJycg").build();
+//        HttpPost post = new HttpPost(url);
+//        post.setEntity(new SerializableEntity(param));
+//        post.setHeader("Content-Type", "application/json");
+//        HttpClientBuilder httpClientBuilder = HttpClientBuilder.create();
+//                CloseableHttpClient client = httpClientBuilder.build();
+//                CloseableHttpResponse response = client.execute(post);
+//        System.out.println(response);
+    }
+
 }

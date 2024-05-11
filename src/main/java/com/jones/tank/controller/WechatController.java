@@ -1,12 +1,19 @@
 package com.jones.tank.controller;
 
+import com.baomidou.mybatisplus.core.toolkit.StringUtils;
+import com.jones.tank.entity.param.UserRegistParam;
+import com.jones.tank.entity.param.WeprogramMsgCheckParam;
 import com.jones.tank.object.BaseResponse;
+import com.jones.tank.object.ErrorCode;
 import com.jones.tank.util.WechatApiUtil;
 import com.jones.tank.util.WechatWeProgramUtil;
+import com.jones.tank.util.LoginUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Profile;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.constraints.NotBlank;
@@ -19,6 +26,8 @@ import javax.validation.constraints.NotNull;
 public class WechatController {
     @Autowired
     private WechatApiUtil wechatApiUtil;
+    @Autowired
+    private LoginUtil loginUtil;
     /**
      * 获取accessToken
      * @return
@@ -27,6 +36,11 @@ public class WechatController {
     @GetMapping(value="/accessToken")
     public BaseResponse getAccessToken(){
         return BaseResponse.builder().data(wechatApiUtil.getAccessToken()).build();
+    }
+    @ApiOperation(value = "获取accessToken", notes = "获取accessToken")
+    @GetMapping(value="/accessToken/refresh")
+    public BaseResponse refreshAccessToken(){
+        return BaseResponse.builder().data(wechatApiUtil.generateAccessToken()).build();
     }
     /**
      * 获取accessToken
@@ -84,6 +98,23 @@ public class WechatController {
     @GetMapping(value="/weprogram/wxAppid")
     public BaseResponse wxAppid(){
         return BaseResponse.builder().data(WechatWeProgramUtil.WECHAT_WEPROGRAM_APP_ID).build();
+    }
+
+    /**
+     * 小程序appid
+     * @return
+     */
+    @ApiOperation(value = "小程序内容检测", notes = "小程序内容检测")
+    @PostMapping(value="/weprogram/msgCheck")
+    public BaseResponse msgCheck(@Validated @RequestBody @ApiParam(required=true) WeprogramMsgCheckParam param) {
+        String openid = param.getOpenid();
+        if(StringUtils.isEmpty(openid)){
+            openid = loginUtil.getInstance().getUser().getOpenid();
+        }
+        if(StringUtils.isEmpty(openid)){
+            return BaseResponse.builder().code(ErrorCode.INTERNAL_ERROR).message("当前用户未绑定微信小程序").build();
+        }
+        return BaseResponse.builder().data(WechatApiUtil.checkMsgSec(openid, param.getContent(), null)).build();
     }
 
 }

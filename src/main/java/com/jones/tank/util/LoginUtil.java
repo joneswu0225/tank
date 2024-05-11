@@ -32,7 +32,7 @@ public class LoginUtil {
             synchronized (LoginUtil.class) {
                 if (INSTANCE == null) {
                     INSTANCE = new LoginUtil();
-                    INSTANCE.setLoginUser("mastertoken", User.builder().userId(1l).mobile("admin").password("admin").build());
+                    INSTANCE.setLoginUser("mastertoken", User.builder().userId(1l).mobile("admin").password("admin").openid("o7rt-65CCbcXh3ZA0b7-PHkpJycg").build());
 //                    INSTANCE.setLoginUser("35C1DB79E47946F1BF0C042E86E92FFF", User.builder().userId(29l).mobile("18616701071").password("o7rt-6z4aBA8kP1O1pYUZDdiFEQM").build());
 //                    INSTANCE.setLoginUser("35C1DB79E47946F1BF0C042E86E92FF1", User.builder().userId(30l).mobile("13564332436").password("o7rt-6zyvJZrN8uay5jrTvwEwXRw").build());
                 }
